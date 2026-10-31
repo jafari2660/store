@@ -25,7 +25,7 @@ const Register = () => {
 
     const phoneRegex = /^(\+98|0)?9\d{9}$/;
     if (!phone || !phoneRegex.test(phone)) {
-      setError("شماره تلفن وارد شده صحیح نیست.");
+      setError("شماره موبایل وارد شده صحیح نیست.");
       return;
     }
 
@@ -44,7 +44,7 @@ const Register = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, phone, email }),
+        body: JSON.stringify({ name, phone, email , type:"register" }),
       });
 
       const data = await res.json();
@@ -74,7 +74,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await fetch("/api/auth/verify-otp-register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -200,7 +200,7 @@ const Register = () => {
                       htmlFor="phone"
                       className="mb-1 block text-sm font-semibold text-[var(--color-text)]"
                     >
-                      شماره تلفن
+                     شماره موبایل
                     </label>
 
                     <div
@@ -212,7 +212,7 @@ const Register = () => {
                         name="phone"
                         type="tel"
                         dir="ltr"
-                        placeholder="شماره تلفن"
+                        placeholder="شماره موبایل"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         required
