@@ -29,11 +29,15 @@ const UserSchema = new mongoose.Schema(
       default: "USER",
     },
 
-      isActive: {
+    isActive: {
       type: Boolean,
       default: false,
     },
     
+    password: {
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,

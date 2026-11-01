@@ -1,8 +1,8 @@
 import connectToDatabase from "@/app/lib/db";
-import Otp from "@/models/Otp";
 import User from "@/models/User";
 import CredentialsProvider from "next-auth/providers/credentials";
 import NextAuth from "next-auth";
+import bcrypt from "bcryptjs";
 
 export const authOptions = {
   providers: [
@@ -11,45 +11,48 @@ export const authOptions = {
 
       credentials: {
         phone: { label: "Phone", type: "text" },
-        code: { label: "OTP", type: "text" },
+        password: { label: "Password", type: "password" },
       },
 
       async authorize(credentials) {
         try {
           await connectToDatabase();
 
-          const { phone, code } = credentials || {};
+          const { phone, password } = credentials || {};
 
-          if (!phone || !code) {
-            throw new Error("شماره موبایل و کد تأیید الزامی است.");
+          if (
+            typeof phone !== "string" ||
+            typeof password !== "string" ||
+            !phone.trim() ||
+            !password
+          ) {
+            throw new Error("شماره موبایل و رمز عبور الزامی است.");
           }
 
-          const otp = await Otp.findOne({
-            phone,
-            code,
-            kind: 2,
-          });
+          const normalizedPhone = phone.trim();
 
-          if (!otp) {
-            throw new Error("کد تأیید صحیح نیست.");
-          }
+          // دریافت کاربر و رمز عبور از دیتابیس
+          const user = await User.findOne({
+            phone: normalizedPhone,
+          }).select("+password");
 
-          if (otp.expiresAt < new Date()) {
-            await Otp.deleteOne({ _id: otp._id });
-            throw new Error("کد تأیید منقضی شده است.");
-          }
-
-          const user = await User.findOne({ phone });
-
-          if (!user) {
-            throw new Error("کاربر یافت نشد.");
+          if (!user || !user.password) {
+            throw new Error("شماره موبایل یا رمز عبور اشتباه است.");
           }
 
           if (!user.isActive) {
             throw new Error("حساب کاربری شما غیرفعال است.");
           }
 
-          await Otp.deleteOne({ _id: otp._id });
+          // بررسی رمز عبور
+          const isValid = await bcrypt.compare(
+            password,
+            user.password
+          );
+
+          if (!isValid) {
+            throw new Error("شماره موبایل یا رمز عبور اشتباه است.");
+          }
 
           return {
             id: user._id.toString(),

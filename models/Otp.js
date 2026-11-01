@@ -6,17 +6,22 @@ const OtpSchema = new mongoose.Schema(
       type: String,
       required: [true, "Phone is required"],
     },
+
     code: {
       type: String,
       required: [true, "Code is required"],
     },
+
     kind: {
       type: Number,
       required: [true, "Kind is required"],
-      default:1,
-      comment :"1 for register , 2 for login"
+      enum: [1, 2, 3, 4],
+      default: 1,
+      comment:
+        "1 for register, 2 for login, 3 for set password, 4 for reset password",
     },
-     expiresAt: {
+
+    expiresAt: {
       type: Date,
       required: [true, "ExpiresAt is required"],
     },
@@ -26,3 +31,4 @@ const OtpSchema = new mongoose.Schema(
 
 export default mongoose.models.Otp ||
   mongoose.model("Otp", OtpSchema);
+

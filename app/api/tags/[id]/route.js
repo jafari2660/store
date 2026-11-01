@@ -67,9 +67,6 @@ export async function PUT(request, { params }) {
     }
 
     tag.name = trimmedName;
-
-    // استفاده از save باعث اجرای pre-validate مدل Tag
-    // و به‌روزرسانی normalizedName می‌شود.
     await tag.save();
 
     return jsonResponse(tag, 200);

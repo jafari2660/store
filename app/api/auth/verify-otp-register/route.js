@@ -1,4 +1,3 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
@@ -54,7 +53,7 @@ export async function POST(request) {
       );
     }
 
-    await User.create({
+    const newUser = await User.create({
       name: name.trim(),
       phone,
       email: normalizedEmail,
@@ -65,7 +64,11 @@ export async function POST(request) {
     await Otp.deleteOne({ _id: otp._id });
 
     return Response.json(
-      { message: "ثبت‌نام با موفقیت انجام شد." },
+      {
+        message: "ثبت‌نام با موفقیت انجام شد. اکنون رمز عبور خود را تعیین کنید.",
+        nextStep: "set-password",
+        phone: newUser.phone,
+      },
       { status: 201 }
     );
 
