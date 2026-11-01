@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { toPersianDigits } from "@/app/lib/numberUtils";
 import Pagination from "@/components/ui/Pagination";
+import AuthWrapper from "@/components/auth/Auth";
 
 const DiscountCodes = () => {
   const [discountCodes, setDiscountCodes] = useState([]);
@@ -100,6 +101,7 @@ const DiscountCodes = () => {
   };
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden md:block md:w-64 md:shrink-0">
@@ -244,6 +246,7 @@ const DiscountCodes = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

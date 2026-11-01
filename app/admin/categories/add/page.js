@@ -3,6 +3,8 @@ import Header from "@/components/ui/Header";
 import Sidebar from "@/components/ui/Sidebar";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import AuthWrapper from "@/components/auth/Auth";
+
 const AddCategory = () => {
   const [name, setName] = useState("");
   const [error, setError] = useState(null);
@@ -45,6 +47,7 @@ const AddCategory = () => {
     }
   };
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0 overflow-x-clip">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -104,6 +107,7 @@ const AddCategory = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

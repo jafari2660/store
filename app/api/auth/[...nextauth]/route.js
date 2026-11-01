@@ -31,7 +31,7 @@ export const authOptions = {
 
           const normalizedPhone = phone.trim();
 
-          // دریافت کاربر و رمز عبور از دیتابیس
+      
           const user = await User.findOne({
             phone: normalizedPhone,
           }).select("+password");
@@ -44,7 +44,7 @@ export const authOptions = {
             throw new Error("حساب کاربری شما غیرفعال است.");
           }
 
-          // بررسی رمز عبور
+      
           const isValid = await bcrypt.compare(
             password,
             user.password

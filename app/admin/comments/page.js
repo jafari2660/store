@@ -7,6 +7,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import GeneralError from "@/components/ui/GeneralError";
 import Pagination from "@/components/ui/Pagination";
 import { toPersianDigits } from "@/app/lib/numberUtils";
+import AuthWrapper from "@/components/auth/Auth";
 
 const Comments = () => {
   const [comments, setComments] = useState([]);
@@ -111,6 +112,7 @@ const Comments = () => {
   }, [currentPage, totalPages]);
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -284,6 +286,7 @@ const Comments = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

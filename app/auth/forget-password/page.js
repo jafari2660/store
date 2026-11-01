@@ -166,17 +166,6 @@ export default function ForgetPasswordPage() {
           <form onSubmit={handleResetPassword} className="space-y-4">
 
             <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="کد تایید ۶ رقمی"
-              disabled={loading}
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
-            />
-
-            <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -193,6 +182,18 @@ export default function ForgetPasswordPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
             />
+
+             <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="کد تایید ۶ رقمی"
+              disabled={loading}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
+            />
+
 
             <button
               type="submit"

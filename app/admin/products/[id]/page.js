@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import AuthWrapper from "@/components/auth/Auth";
 
 const UpdateProduct = () => {
   const { id } = useParams();
@@ -306,6 +307,7 @@ const UpdateProduct = () => {
     return <LoadingSpinner />;
   }
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0 overflow-x-clip">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -585,6 +587,7 @@ const UpdateProduct = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

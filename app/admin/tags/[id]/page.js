@@ -4,6 +4,7 @@ import Header from "@/components/ui/Header";
 import Sidebar from "@/components/ui/Sidebar";
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import AuthWrapper from "@/components/auth/Auth";
 
 const UpdateTag = () => {
   const { id } = useParams();
@@ -97,6 +98,7 @@ const UpdateTag = () => {
   };
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0 overflow-x-clip">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -177,6 +179,7 @@ const UpdateTag = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

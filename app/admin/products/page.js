@@ -9,6 +9,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Pagination from "@/components/ui/Pagination";
 import { toPersianDigits, formatPrice } from "@/app/lib/numberUtils";
+import AuthWrapper from "@/components/auth/Auth";
+
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -89,6 +91,7 @@ const Products = () => {
   }, [currentPage, totalPages]);
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0 overflow-x-clip">
       <div className="flex min-h-screen w-full min-w-0 gap-4">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -370,6 +373,7 @@ const Products = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

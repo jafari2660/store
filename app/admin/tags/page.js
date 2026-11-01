@@ -8,6 +8,7 @@ import Pagination from "@/components/ui/Pagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import GeneralError from "@/components/ui/GeneralError";
 import { AiOutlinePlus } from "react-icons/ai";
+import AuthWrapper from "@/components/auth/Auth";
 
 const TagsPage = () => {
   const [tags, setTags] = useState([]);
@@ -83,14 +84,15 @@ const TagsPage = () => {
   };
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0">
       <div className="flex min-h-screen w-full min-w-0">
-        {/* سایدبار دسکتاپ */}
+       
         <div className="hidden md:block md:w-64 md:shrink-0">
           <Sidebar />
         </div>
 
-        {/* محتوای اصلی */}
+       
         <div className="min-w-0 w-full flex-1">
           <Header />
 
@@ -111,7 +113,6 @@ const TagsPage = () => {
                 </Link>
               </div>
 
-              {/* جست‌وجو */}
               <div className="border-b border-[var(--color-border)] p-3 sm:p-5">
                 <input
                   type="text"
@@ -126,7 +127,7 @@ const TagsPage = () => {
                 />
               </div>
 
-              {/* جدول */}
+             
               <div className="min-w-0 overflow-x-auto">
                 {error && <GeneralError error={error} />}
 
@@ -200,7 +201,7 @@ const TagsPage = () => {
                 )}
               </div>
 
-              {/* صفحه‌بندی */}
+           
               {!loading && filteredTags.length > 0 && (
                 <div className="min-w-0 overflow-x-auto">
                   <Pagination
@@ -216,12 +217,13 @@ const TagsPage = () => {
           </main>
         </div>
 
-        {/* سایدبار موبایل */}
+       
         <div className="md:hidden">
           <Sidebar />
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

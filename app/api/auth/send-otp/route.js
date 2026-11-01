@@ -117,7 +117,8 @@ export async function POST(request) {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // TODO: ارسال پیامک otpCode به شماره موبایل
+        await sendSms(phone, `کد تایید شما: ${otpCode}`);
+
 
     return Response.json(
       { message: "کد تأیید برای شما ارسال شد." },

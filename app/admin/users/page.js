@@ -9,6 +9,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Pagination from "@/components/ui/Pagination";
 import { toPersianDigits } from "@/app/lib/numberUtils";
+import AuthWrapper from "@/components/auth/Auth";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -100,6 +101,7 @@ const Users = () => {
   };
 
   return (
+    <AuthWrapper>
     <div className="w-full">
       <div className="flex flex-wrap">
         <div className="h-screen w-full md:w-1/6">
@@ -226,6 +228,7 @@ const Users = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

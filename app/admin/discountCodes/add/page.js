@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
+import AuthWrapper from "@/components/auth/Auth";
 
 const AddDiscountCodes = () => {
   const [code, setCode] = useState("");
@@ -85,6 +86,7 @@ const AddDiscountCodes = () => {
   };
 
   return (
+    <AuthWrapper>
     <div className="min-h-screen w-full min-w-0 overflow-x-clip">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden shrink-0 md:block md:w-64">
@@ -188,6 +190,7 @@ const AddDiscountCodes = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

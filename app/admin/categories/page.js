@@ -9,6 +9,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Pagination from "@/components/ui/Pagination";
 import { toPersianDigits } from "@/app/lib/numberUtils";
+import AuthWrapper from "@/components/auth/Auth";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -79,7 +80,8 @@ const Categories = () => {
     }
   };
 
-  return (
+  return ( 
+  <AuthWrapper>
     <div className="min-h-screen w-full min-w-0">
       <div className="flex min-h-screen w-full min-w-0">
         <div className="hidden md:block md:w-64 md:shrink-0">
@@ -207,6 +209,7 @@ const Categories = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

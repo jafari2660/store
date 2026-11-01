@@ -9,6 +9,7 @@ import {
   FaEnvelope,
   FaLock,
 } from "react-icons/fa";
+import NoAuthWrapper from "@/components/auth/NoAuthWrapper";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -212,12 +213,13 @@ const Register = () => {
   };
 
   return (
+    <NoAuthWrapper>
     <main className="h-screen box-border overflow-hidden bg-[var(--color-background)] p-3 sm:p-4 lg:p-8">
       <div
         dir="ltr"
         className="mx-auto grid h-full w-full max-w-7xl grid-cols-1 overflow-hidden rounded-3xl bg-[var(--color-surface)] shadow-xl lg:grid-cols-2"
       >
-        {/* تصویر سمت چپ */}
+       
         <section className="relative hidden min-h-0 overflow-hidden bg-[var(--color-hover)] lg:block">
           <img
             src="/images/login-illustration.png"
@@ -226,7 +228,7 @@ const Register = () => {
           />
         </section>
 
-        {/* مرحله اول: اطلاعات ثبت‌نام */}
+       
         {step === 1 && (
           <section
             dir="rtl"
@@ -363,7 +365,7 @@ const Register = () => {
           </section>
         )}
 
-        {/* مرحله دوم: تأیید کد ثبت‌نام */}
+     
         {step === 2 && (
           <section
             dir="rtl"
@@ -615,6 +617,7 @@ const Register = () => {
         )}
       </div>
     </main>
+    </NoAuthWrapper>
   );
 };
 

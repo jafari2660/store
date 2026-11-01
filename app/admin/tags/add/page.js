@@ -4,6 +4,7 @@ import Header from "@/components/ui/Header";
 import Sidebar from "@/components/ui/Sidebar";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import AuthWrapper from "@/components/auth/Auth";
 
 const AddTag = () => {
   const [name, setName] = useState("");
@@ -68,79 +69,82 @@ const AddTag = () => {
   };
 
   return (
-    <div className="min-h-screen w-full min-w-0 overflow-x-clip">
-      <div className="flex min-h-screen w-full min-w-0">
-        <div className="hidden shrink-0 md:block md:w-64">
-          <Sidebar />
-        </div>
+    <AuthWrapper>
+      <div className="min-h-screen w-full min-w-0 overflow-x-clip">
+        <div className="flex min-h-screen w-full min-w-0">
+          <div className="hidden shrink-0 md:block md:w-64">
+            <Sidebar />
+          </div>
 
-        <div className="min-w-0 flex-1">
-          <Header />
+          <div className="min-w-0 flex-1">
+            <Header />
 
-          <main
-            className="min-h-[80vh] min-w-0 p-2 sm:p-3 md:p-4"
-            onClick={(e) => {
-              if (e.target.closest("button, input, label, a")) {
-                return;
-              }
+            <main
+              className="min-h-[80vh] min-w-0 p-2 sm:p-3 md:p-4"
+              onClick={(e) => {
+                if (e.target.closest("button, input, label, a")) {
+                  return;
+                }
 
-              document.getElementById("tag-name")?.focus();
-            }}
-          >
-            <div className="mx-auto w-full max-w-3xl min-w-0 rounded-xl border border-[var(--color-border)] p-3 shadow-sm sm:p-5 md:p-6">
-              <h2 className="my-4">افزودن برچسب جدید</h2>
+                document.getElementById("tag-name")?.focus();
+              }}
+            >
+              <div className="mx-auto w-full max-w-3xl min-w-0 rounded-xl border border-[var(--color-border)] p-3 shadow-sm sm:p-5 md:p-6">
+                <h2 className="my-4">افزودن برچسب جدید</h2>
 
-              {error && (
-                <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
 
-              {formError && (
-                <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {formError}
-                </div>
-              )}
+                {formError && (
+                  <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {formError}
+                  </div>
+                )}
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label
-                    htmlFor="tag-name"
-className="mb-2 block text-sm font-medium text-[var(--color-text)]"                  >
-                    نام برچسب
-                  </label>
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-3">
+                    <label
+                      htmlFor="tag-name"
+                      className="mb-2 block text-sm font-medium text-[var(--color-text)]"
+                    >
+                      نام برچسب
+                    </label>
 
-                  <input
-                    id="tag-name"
-                    type="text"
-                    placeholder="نام برچسب ..."
-                    value={name}
-                    maxLength={30}
+                    <input
+                      id="tag-name"
+                      type="text"
+                      placeholder="نام برچسب ..."
+                      value={name}
+                      maxLength={30}
+                      disabled={saving}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setFormError("");
+                      }}
+                      className="w-full min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
                     disabled={saving}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setFormError("");
-                    }}
-                    className="w-full min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm text-white transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? "در حال ذخیره..." : "ذخیره"}
-                </button>
-              </form>
-            </div>
-          </main>
-        </div>
-        <div className="md:hidden">
-          <Sidebar />
+                    className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm text-white transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? "در حال ذخیره..." : "ذخیره"}
+                  </button>
+                </form>
+              </div>
+            </main>
+          </div>
+          <div className="md:hidden">
+            <Sidebar />
+          </div>
         </div>
       </div>
-    </div>
+    </AuthWrapper>
   );
 };
 

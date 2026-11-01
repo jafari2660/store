@@ -1,9 +1,11 @@
 import React from "react";
 import Header from "@/components/ui/Header";
 import Sidebar from "@/components/ui/Sidebar";
+import AuthWrapper from "@/components/auth/Auth";
 
 const AdminDashboard = () => {
   return (
+    <AuthWrapper>
     <div className="min-w-0 flex-1 px-1 sm:px-2 md:px-3">
       <div className="flex min-h-screen w-full">
       
@@ -21,6 +23,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   );
 };
 

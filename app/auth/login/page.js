@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { FaUser, FaPhone } from "react-icons/fa";
+import NoAuthWrapper from "@/components/auth/NoAuthWrapper";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -48,7 +49,7 @@ const Login = () => {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace("/admin");
       router.refresh();
     } catch {
       setError("خطایی هنگام ورود رخ داده است.");
@@ -58,12 +59,13 @@ const Login = () => {
   };
 
   return (
+    <NoAuthWrapper>
     <main className="h-screen box-border overflow-hidden bg-[var(--color-background)] p-3 sm:p-4 lg:p-8">
       <div
         dir="ltr"
         className="mx-auto grid h-full w-full max-w-7xl grid-cols-1 overflow-hidden rounded-3xl bg-[var(--color-surface)] shadow-xl lg:grid-cols-2"
       >
-        {/* تصویر سمت چپ */}
+        
         <section className="relative hidden min-h-0 overflow-hidden bg-[var(--color-hover)] lg:block">
           <img
             src="/images/login-illustration.png"
@@ -72,7 +74,7 @@ const Login = () => {
           />
         </section>
 
-        {/* فرم ورود */}
+        
         <section
           dir="rtl"
           className="relative flex min-h-0 items-start justify-center overflow-y-auto bg-[var(--color-surface)] px-4 pt-12 py-3 sm:px-8 sm:py-4 lg:px-10"
@@ -180,6 +182,7 @@ const Login = () => {
         </section>
       </div>
     </main>
+    </NoAuthWrapper>
   );
 };
 
