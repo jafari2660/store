@@ -9,7 +9,7 @@ export async function sendSms(phone, message) {
 
   const payload = {
     username: MELIPAYAMAK_USERNAME,
-    password: MELIPAYAMAK_PASSWROD,
+    password: MELIPAYAMAK_PASSWORD,
     to: phone,
     from: process.env.MELIPAYAMAK_FROM_NUMBER,
     text: message,

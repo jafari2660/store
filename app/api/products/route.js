@@ -6,6 +6,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { randomUUID } from "crypto";
 import mongoose from "mongoose";
 import Tag from "@/models/Tag";
+import { requireAdmin } from "@/app/lib/auth";
 
 export async function GET(request) {
   try {
@@ -28,6 +29,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
     const data = await request.formData();
 
     const bookFile = data.get("file");
@@ -52,10 +58,26 @@ export async function POST(request) {
     const author = data.get("author");
     const description = data.get("description");
     const category = data.get("category");
-
     const fileType = data.get("fileType");
-    const isActive = data.get("isActive") === "true";
-    const saleStatus = data.get("saleStatus") === "true";
+    const isActiveValue = data.get("isActive");
+    const saleStatusValue = data.get("saleStatus");
+
+    if (!["true", "false"].includes(isActiveValue)) {
+      return Response.json(
+        { message: "وضعیت فعال بودن محصول معتبر نیست." },
+        { status: 400 },
+      );
+    }
+
+    if (!["true", "false"].includes(saleStatusValue)) {
+      return Response.json(
+        { message: "وضعیت فروش محصول معتبر نیست." },
+        { status: 400 },
+      );
+    }
+
+    const isActive = isActiveValue === "true";
+    const saleStatus = saleStatusValue === "true";
 
     const stock = Number(data.get("stock"));
     const price = Number(data.get("price"));
@@ -99,7 +121,8 @@ export async function POST(request) {
     ) {
       return Response.json(
         {
-          message: "شناسه برچسب ها نامعتبر است؛ باید شناسه ارسال شود، نه نام برچسب",
+          message:
+            "شناسه برچسب ها نامعتبر است؛ باید شناسه ارسال شود، نه نام برچسب",
         },
         { status: 400 },
       );
@@ -224,16 +247,19 @@ export async function POST(request) {
       );
     }
 
-    if (isActive != null && typeof isActive !== "boolean") {
-      return new Response(
-        JSON.stringify({ message: "وضعیت فعال بودن باید بولین باشد" }),
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+    const MAX_BOOK_SIZE = 50 * 1024 * 1024;
+
+    if (imageFile.size > MAX_IMAGE_SIZE) {
+      return Response.json(
+        { message: "حجم تصویر نباید بیشتر از ۵ مگابایت باشد." },
         { status: 400 },
       );
     }
 
-    if (saleStatus != null && typeof saleStatus !== "boolean") {
-      return new Response(
-        JSON.stringify({ message: "وضعیت فروش باید بولی باشد" }),
+    if (bookFile.size > MAX_BOOK_SIZE) {
+      return Response.json(
+        { message: "حجم فایل کتاب نباید بیشتر از ۵۰ مگابایت باشد." },
         { status: 400 },
       );
     }
@@ -269,7 +295,7 @@ export async function POST(request) {
     }
 
     const imageDir = join(process.cwd(), "public/uploadImage");
-    const bookDir = join(process.cwd(), "public/uploadBook");
+    const bookDir = join(process.cwd(), "private_uploads", "books");
 
     await mkdir(imageDir, { recursive: true });
     await mkdir(bookDir, { recursive: true });
@@ -297,7 +323,7 @@ export async function POST(request) {
       stock: Number(stock),
       category,
       image: `/uploadImage/${imageFileName}`,
-      file: `/uploadBook/${bookFileName}`,
+      file: bookFileName,
       fileType: normalizedFileType,
       tags,
       isActive,

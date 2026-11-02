@@ -1,10 +1,15 @@
 import connectToDatabase from "@/app/lib/db";
 import DiscountCode from "@/models/DiscountCode";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/app/lib/auth";
 
-
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
     await connectToDatabase();
 
     const discountCodes = await DiscountCode.find({})
@@ -24,20 +29,23 @@ export async function GET() {
   }
 }
 
-
 export async function POST(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
     await connectToDatabase();
 
     const data = await request.json();
 
     const code =
-      typeof data.code === "string"
-        ? data.code.trim().toUpperCase()
-        : "";
+      typeof data.code === "string" ? data.code.trim().toUpperCase() : "";
 
     const percentage = data.percentage;
     const expiresDate = data.expiresDate;
+    const isActive = data.isActive;
 
     if (!code) {
       return NextResponse.json(
@@ -46,11 +54,7 @@ export async function POST(request) {
       );
     }
 
-    if (
-      !Number.isInteger(percentage) ||
-      percentage < 1 ||
-      percentage > 100
-    ) {
+    if (!Number.isInteger(percentage) || percentage < 1 || percentage > 100) {
       return NextResponse.json(
         { message: "درصد تخفیف باید عددی بین ۱ تا ۱۰۰ باشد" },
         { status: 400 },
@@ -77,11 +81,18 @@ export async function POST(request) {
       );
     }
 
+    if (typeof isActive !== "boolean") {
+      return NextResponse.json(
+        { message: "وضعیت فعال بودن کد تخفیف معتبر نیست." },
+        { status: 400 },
+      );
+    }
+
     const discountCode = await DiscountCode.create({
       code,
       percentage,
       expiresDate: expirationDate,
-      isActive: true,
+      isActive,
     });
 
     return NextResponse.json(discountCode, {
@@ -103,5 +114,3 @@ export async function POST(request) {
     );
   }
 }
-
-

@@ -2,6 +2,7 @@ import connectToDatabase from "@/app/lib/db";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
 import crypto from "crypto";
+import { sendSms } from "@/app/lib/meliPayamak";
 
 export async function POST(request) {
   try {
@@ -19,6 +20,12 @@ export async function POST(request) {
       );
     }
 
+    if (typeof phone !== "string") {
+      return Response.json(
+        { message: "شماره موبایل معتبر نیست." },
+        { status: 400 },
+      );
+    }
 
     const normalizedPhone = phone.trim();
     const phoneRegex = /^(\+98|0)?9\d{9}$/;
@@ -110,15 +117,19 @@ export async function POST(request) {
     const kind = type === "register" ? 1 : type === "set-password" ? 3 : 4;
 
     await Otp.deleteMany({ phone: normalizedPhone, kind });
-    await Otp.create({
+    const otp = await Otp.create({
       phone: normalizedPhone,
       code: otpCode,
       kind,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-        await sendSms(phone, `کد تایید شما: ${otpCode}`);
-
+    try {
+      await sendSms(normalizedPhone, `کد تایید شما: ${otpCode}`);
+    } catch (error) {
+      await Otp.deleteOne({ _id: otp._id });
+      throw error;
+    }
 
     return Response.json(
       { message: "کد تأیید برای شما ارسال شد." },

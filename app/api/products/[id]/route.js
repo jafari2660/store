@@ -6,6 +6,7 @@ import { join, basename, extname } from "path";
 import { mkdir, writeFile, unlink } from "fs/promises";
 import { randomUUID } from "crypto";
 import Tag from "@/models/Tag";
+import { requireAdmin } from "@/app/lib/auth";
 
 export async function GET(request, { params }) {
   try {
@@ -42,6 +43,11 @@ export async function PUT(request, { params }) {
   let savedFileDiskPath = null;
 
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
     await connectToDatabase();
 
     const { id } = await params;
@@ -291,6 +297,11 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
     await connectToDatabase();
 
     const { id } = await params;

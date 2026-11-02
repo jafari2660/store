@@ -1,6 +1,7 @@
 
 import connectToDatabase from "@/app/lib/db";
 import Tag from "@/models/Tag";
+import { requireAdmin } from "@/app/lib/auth";
 
 export async function GET(request) {
   try {
@@ -29,6 +30,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+     const auth = await requireAdmin(request);
+    
+        if (!auth.authorized) {
+          return auth.response;
+        }
     await connectToDatabase();
 
     const body = await request.json();

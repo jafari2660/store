@@ -1,175 +1,263 @@
 import connectToDatabase from "@/app/lib/db";
 import User from "@/models/User";
+import { requireAdmin } from "@/app/lib/auth";
+import mongoose from "mongoose";
 
 export async function GET(request, { params }) {
-  await connectToDatabase();
-
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    await connectToDatabase();
     const { id } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json(
+        { message: "شناسه کاربر معتبر نیست." },
+        { status: 400 }
+      );
+    }
+
     const user = await User.findById(id);
 
     if (!user) {
-      return new Response(JSON.stringify({ message: ";کاربر پیدا نشد" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return Response.json(
+        { message: "کاربر پیدا نشد." },
+        { status: 404 }
+      );
     }
 
-    return new Response(JSON.stringify(user), {
-      status: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(user, { status: 200 });
+
   } catch (error) {
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    console.error("Get User Error:", error);
+
+    return Response.json(
+      { message: "خطا در دریافت اطلاعات کاربر." },
+      { status: 500 }
+    );
   }
 }
 
+
 export async function PUT(request, { params }) {
-  await connectToDatabase();
-
   try {
-    const { id } = await params;
-    const { name, phone, email, role } = await request.json();
+    
+    const auth = await requireAdmin(request);
 
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    await connectToDatabase();
+
+    const { id } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json(
+        { message: "شناسه کاربر معتبر نیست." },
+        { status: 400 }
+      );
+    }
+
+   
+    const body = await request.json();
+    const { name, phone, email, role } = body;
+
+   
     if (
       typeof name !== "string" ||
-      name.trim() === "" ||
       name.trim().length < 3 ||
       name.trim().length > 30
     ) {
-      return new Response(
-        JSON.stringify({ message: "نام باید بین ۳ تا ۳۰ کاراکتر باشد" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+      return Response.json(
+        { message: "نام باید بین ۳ تا ۳۰ کاراکتر باشد." },
+        { status: 400 }
       );
     }
 
-    if (typeof phone !== "string" || phone.trim() === "") {
-      return new Response(
-        JSON.stringify({ message: "شماره موبایل الزامی است" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+    if (
+      typeof phone !== "string" ||
+      !/^(\+98|0)?9\d{9}$/.test(phone.trim())
+    ) {
+      return Response.json(
+        { message: "شماره موبایل معتبر نیست." },
+        { status: 400 }
       );
     }
 
-    if (role && !["USER", "ADMIN"].includes(role)) {
-      return new Response(
-        JSON.stringify({ message: "نقش کاربر معتبر نیست" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+    if (
+      role !== undefined &&
+      !["USER", "ADMIN"].includes(role)
+    ) {
+      return Response.json(
+        { message: "نقش کاربر معتبر نیست." },
+        { status: 400 }
       );
     }
 
     const updateData = {
       name: name.trim(),
       phone: phone.trim(),
-      email: typeof email === "string" && email.trim()
-        ? email.trim().toLowerCase()
-        : undefined,
+      email:
+        typeof email === "string" && email.trim()
+          ? email.trim().toLowerCase()
+          : null,
     };
 
-    if (role) {
+    if (role !== undefined) {
       updateData.role = role;
     }
 
-    if (updateData.email === undefined) {
-      updateData.email = null;
-    }
-
-    const user = await User.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    const user = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!user) {
-      return new Response(
-        JSON.stringify({ message: "کاربر پیدا نشد" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+      return Response.json(
+        { message: "کاربر پیدا نشد." },
+        { status: 404 }
       );
     }
 
-    return new Response(JSON.stringify(user), {
-      status: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(
+      {
+        message: "اطلاعات کاربر با موفقیت ویرایش شد.",
+        user,
+      },
+      { status: 200 }
+    );
+
   } catch (error) {
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    console.error("Update User Error:", error);
+
+    if (error.code === 11000) {
+      return Response.json(
+        { message: "شماره موبایل یا ایمیل قبلاً ثبت شده است." },
+        { status: 409 }
+      );
+    }
+
+    return Response.json(
+      { message: "خطا در ویرایش اطلاعات کاربر." },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request, { params }) {
-  await connectToDatabase();
 
+
+export async function PATCH(request, { params }) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    await connectToDatabase();
+
     const { id } = await params;
-    const { role } = await request.json();
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json(
+        { message: "شناسه کاربر معتبر نیست." },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { role } = body;
 
     if (!["USER", "ADMIN"].includes(role)) {
-      return new Response(JSON.stringify({ message: "نقش کاربر معتبر نیست" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return Response.json(
+        { message: "نقش کاربر معتبر نیست." },
+        { status: 400 }
+      );
     }
 
     const user = await User.findByIdAndUpdate(
       id,
       { role },
-      { new: true, runValidators: true },
+      {
+        new: true,
+        runValidators: true,
+      }
     );
 
     if (!user) {
-      return new Response(JSON.stringify({ message: "کاربر پیدا نشد" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return Response.json(
+        { message: "کاربر پیدا نشد." },
+        { status: 404 }
+      );
     }
 
-    return new Response(JSON.stringify(user), {
-      status: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(
+      {
+        message: "نقش کاربر با موفقیت تغییر کرد.",
+        user,
+      },
+      { status: 200 }
+    );
+
   } catch (error) {
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    console.error("Change User Role Error:", error);
+
+    return Response.json(
+      { message: "خطا در تغییر نقش کاربر." },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request, { params }) {
-  await connectToDatabase();
 
+export async function DELETE(request, { params }) {
   try {
+
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+  
+    await connectToDatabase();
+
     const { id } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return Response.json(
+        { message: "شناسه کاربر معتبر نیست." },
+        { status: 400 }
+      );
+    }
+
+  
     const user = await User.findByIdAndDelete(id);
 
     if (!user) {
-      return new Response(JSON.stringify({ message: "کاربر پیدا نشد" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return Response.json(
+        { message: "کاربر پیدا نشد." },
+        { status: 404 }
+      );
     }
 
     return new Response(null, { status: 204 });
+
   } catch (error) {
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    console.error("Delete User Error:", error);
+
+    return Response.json(
+      { message: "خطا در حذف کاربر." },
+      { status: 500 }
+    );
   }
 }

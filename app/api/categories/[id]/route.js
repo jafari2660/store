@@ -1,6 +1,6 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Category from "@/models/Category";
+import { requireAdmin } from "@/app/lib/auth";
 
 export async function GET(request, { params }) {
   await connectToDatabase();
@@ -10,13 +10,10 @@ export async function GET(request, { params }) {
     const category = await Category.findById(id);
 
     if (!category) {
-      return new Response(
-        JSON.stringify({ message: "دسته‌بندی پیدا نشد" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
+      return new Response(JSON.stringify({ message: "دسته‌بندی پیدا نشد" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
 
     return new Response(JSON.stringify(category), {
@@ -32,6 +29,11 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
+  const auth = await requireAdmin(request);
+
+  if (!auth.authorized) {
+    return auth.response;
+  }
   await connectToDatabase();
 
   try {
@@ -48,7 +50,7 @@ export async function PUT(request, { params }) {
         {
           status: 400,
           headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+        },
       );
     }
 
@@ -60,24 +62,21 @@ export async function PUT(request, { params }) {
         {
           status: 400,
           headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+        },
       );
     }
 
     const category = await Category.findByIdAndUpdate(
       id,
       { name },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!category) {
-      return new Response(
-        JSON.stringify({ message: "دسته‌بندی پیدا نشد" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
+      return new Response(JSON.stringify({ message: "دسته‌بندی پیدا نشد" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
 
     return new Response(JSON.stringify(category), {
@@ -93,6 +92,11 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const auth = await requireAdmin(request);
+
+  if (!auth.authorized) {
+    return auth.response;
+  }
   await connectToDatabase();
 
   try {
@@ -100,13 +104,10 @@ export async function DELETE(request, { params }) {
     const category = await Category.findByIdAndDelete(id);
 
     if (!category) {
-      return new Response(
-        JSON.stringify({ message: "دسته‌بندی پیدا نشد" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
+      return new Response(JSON.stringify({ message: "دسته‌بندی پیدا نشد" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
 
     return new Response(null, { status: 204 });

@@ -2,9 +2,12 @@ import connectToDatabase from "@/app/lib/db";
 import Comment from "@/models/Comment";
 import User from "@/models/User";
 import Product from "@/models/Product";
+import { requireAdmin } from "@/app/lib/auth";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireAdmin(request);
+if (!auth.authorized) return auth.response;
     await connectToDatabase();
 
     const comments = await Comment.find({})

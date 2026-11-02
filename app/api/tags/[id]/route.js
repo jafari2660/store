@@ -3,6 +3,7 @@ import connectToDatabase from "@/app/lib/db";
 import Tag from "@/models/Tag";
 import Product from "@/models/Product";
 import mongoose from "mongoose";
+import { requireAdmin } from "@/app/lib/auth";
 
 const jsonResponse = (data, status) =>
   new Response(JSON.stringify(data), {
@@ -36,6 +37,11 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+     const auth = await requireAdmin(request);
+    
+        if (!auth.authorized) {
+          return auth.response;
+        }
     await connectToDatabase();
 
     const { id } = await params;
@@ -85,6 +91,11 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+     const auth = await requireAdmin(request);
+    
+        if (!auth.authorized) {
+          return auth.response;
+        }
     await connectToDatabase();
 
     const { id } = await params;

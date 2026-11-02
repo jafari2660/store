@@ -1,34 +1,40 @@
 
 import connectToDatabase from "@/app/lib/db";
-
-
 import User from "@/models/User";
+import { requireAdmin } from "@/app/lib/auth";
 
-
-export async function GET() {
+export async function GET(request) {
   try {
-    
+    const auth = await requireAdmin(request);
+
+   
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     await connectToDatabase();
-
     const users = await User.find({});
-    return new Response(JSON.stringify(users), {
-      status: 200,
-
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(users, { status: 200 });
 
   } catch (error) {
-    
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
+    console.error("Get Users Error:", error);
 
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(
+      { message: "خطا در دریافت کاربران." },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request) {
   try {
+    
+    const auth = await requireAdmin(request);
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     await connectToDatabase();
 
     const body = await request.json();
@@ -36,49 +42,49 @@ export async function POST(request) {
 
     if (
       typeof name !== "string" ||
-      name.trim() === "" ||
+      !name.trim() ||
       typeof phone !== "string" ||
-      phone.trim() === ""
+      !phone.trim()
     ) {
-      return new Response(
-        JSON.stringify({ message: "نام و شماره کاربر الزامی است" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+      return Response.json(
+        { message: "نام و شماره کاربر الزامی است." },
+        { status: 400 }
+      );
+    }
+
+    if (role !== undefined && !["USER", "ADMIN"].includes(role)) {
+      return Response.json(
+        { message: "نقش کاربر معتبر نیست." },
+        { status: 400 }
       );
     }
 
     const userData = {
       name: name.trim(),
       phone: phone.trim(),
-      role: role === "ADMIN" ? "ADMIN" : "USER",
+      role: role || "USER",
     };
 
-    if (typeof email === "string" && email.trim() !== "") {
+    if (typeof email === "string" && email.trim()) {
       userData.email = email.trim().toLowerCase();
     }
-
     const user = await User.create(userData);
 
-    return new Response(JSON.stringify(user), {
-      status: 201,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(user, { status: 201 });
+
   } catch (error) {
+    console.error("Create User Error:", error);
+
     if (error.code === 11000) {
-      return new Response(
-        JSON.stringify({ message: "این شماره یا ایمیل قبلاً ثبت شده است" }),
-        {
-          status: 409,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
+      return Response.json(
+        { message: "این شماره یا ایمیل قبلاً ثبت شده است." },
+        { status: 409 }
       );
     }
 
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return Response.json(
+      { message: "خطا در ایجاد کاربر." },
+      { status: 500 }
+    );
   }
 }
