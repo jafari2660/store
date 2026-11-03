@@ -24,8 +24,12 @@ export default function ForgetPasswordPage() {
     setError("");
     setMessage("");
 
-    const normalizedPhone = phone.trim();
+     const rawPhone = phone.trim();
 
+          const normalizedPhone = rawPhone.startsWith("+98")
+            ? `0${rawPhone.slice(3)}`
+            : rawPhone;
+            
     if (!/^(\+98|0)?9\d{9}$/.test(normalizedPhone)) {
       setError("شماره موبایل معتبر نیست");
       return;

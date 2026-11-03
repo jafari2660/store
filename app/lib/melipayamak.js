@@ -1,9 +1,9 @@
 const MELIPAYAMAK_API_URL = "https://rest.payamak-panel.com/api/SendSMS";
 const MELIPAYAMAK_USERNAME = process.env.MELIPAYAMAK_USERNAME;
-const MELIPAYAMAK_PASSWROD = process.env.MELIPAYAMAK_PASSWORD;
+const MELIPAYAMAK_PASSWORD = process.env.MELIPAYAMAK_PASSWORD;
 
 export async function sendSms(phone, message) {
-  if (!MELIPAYAMAK_USERNAME || !MELIPAYAMAK_PASSWROD) {
+  if (!MELIPAYAMAK_USERNAME || !MELIPAYAMAK_PASSWORD) {
     throw new Error("اطلاعات ورودی برای ارسال پیامک تنظیم نشده است");
   }
 
@@ -16,7 +16,7 @@ export async function sendSms(phone, message) {
   };
 
   try {
-    const response = await fetch(`${MELIPAYAMAK_API_URL}/SendSMS`, {
+    const response = await fetch(MELIPAYAMAK_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

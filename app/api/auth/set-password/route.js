@@ -1,3 +1,4 @@
+
 import connectToDatabase from "@/app/lib/db";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
@@ -7,97 +8,162 @@ export async function POST(request) {
   try {
     await connectToDatabase();
 
-    const { phone, code, password } = await request.json();
+    const body = await request.json();
+    const { phone, code, password } = body || {};
 
-    if (!phone || !code || !password) {
+    if (
+      typeof phone !== "string" ||
+      typeof code !== "string" ||
+      typeof password !== "string"
+    ) {
       return Response.json(
         { message: "تمام فیلدها الزامی هستند." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const phoneRegex = /^(\+98|0)?9\d{9}$/;
+    let normalizedPhone = phone.trim();
 
-    if (typeof phone !== "string" || !phoneRegex.test(phone)) {
+    if (normalizedPhone.startsWith("+98")) {
+      normalizedPhone = `0${normalizedPhone.slice(3)}`;
+    } else if (normalizedPhone.startsWith("9")) {
+      normalizedPhone = `0${normalizedPhone}`;
+    }
+
+    if (!/^09\d{9}$/.test(normalizedPhone)) {
       return Response.json(
         { message: "شماره موبایل صحیح نیست." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (typeof code !== "string" || !/^\d{6}$/.test(code)) {
+    const normalizedCode = code.trim();
+
+    if (!/^\d{6}$/.test(normalizedCode)) {
       return Response.json(
         { message: "کد تأیید باید ۶ رقم باشد." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (password.length < 8 || password.length > 128) {
       return Response.json(
         { message: "رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const user = await User.findOne({ phone }).select("+password");
+    const user = await User.findOne({
+      phone: normalizedPhone,
+    }).select("+password");
 
     if (!user) {
       return Response.json(
         { message: "کاربری با این شماره موبایل پیدا نشد." },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
     if (!user.isActive) {
       return Response.json(
         { message: "حساب کاربری شما غیرفعال است." },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
     if (user.password) {
       return Response.json(
         { message: "شما قبلاً رمز عبور تعیین کرده‌اید." },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
+    const now = new Date();
+
     const otp = await Otp.findOne({
-      phone,
-      code,
+      phone: normalizedPhone,
+      channel: "sms",
       kind: 3,
-    });
+      expiresAt: { $gt: now },
+      attempts: { $lt: 3 },
+    }).sort({ createdAt: -1 });
 
     if (!otp) {
-      return Response.json({ message: "کد تأیید صحیح نیست." }, { status: 400 });
+      return Response.json(
+        { message: "کد تأیید معتبر نیست یا منقضی شده است. دوباره کد بگیرید." },
+        { status: 400 }
+      );
     }
 
-    if (otp.expiresAt < new Date()) {
-      await Otp.deleteOne({ _id: otp._id });
+    if (otp.code !== normalizedCode) {
+      const updatedOtp = await Otp.findOneAndUpdate(
+        {
+          _id: otp._id,
+          attempts: { $lt: 3 },
+          expiresAt: { $gt: new Date() },
+        },
+        { $inc: { attempts: 1 } },
+        { new: true }
+      );
+
+      if (updatedOtp && updatedOtp.attempts >= 3) {
+        await Otp.deleteOne({ _id: updatedOtp._id });
+      }
 
       return Response.json(
-        { message: "کد تأیید منقضی شده است." },
-        { status: 400 },
+        { message: "کد وارد شده صحیح نیست." },
+        { status: 400 }
       );
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    user.password = hashedPassword;
-    await user.save();
+    const consumedOtp = await Otp.findOneAndDelete({
+      _id: otp._id,
+      code: normalizedCode,
+      channel: "sms",
+      kind: 3,
+      expiresAt: { $gt: new Date() },
+      attempts: { $lt: 3 },
+    });
 
-    await Otp.deleteOne({ _id: otp._id });
+    if (!consumedOtp) {
+      return Response.json(
+        { message: "کد تأیید معتبر نیست یا قبلاً استفاده شده است." },
+        { status: 400 }
+      );
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        $or: [
+          { password: { $exists: false } },
+          { password: null },
+          { password: "" },
+        ],
+      },
+      { $set: { password: hashedPassword } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return Response.json(
+        { message: "رمز عبور قبلاً برای حساب شما ثبت شده است." },
+        { status: 409 }
+      );
+    }
 
     return Response.json(
       { message: "رمز عبور با موفقیت ثبت شد." },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("Set Password Error:", error);
 
     return Response.json(
       { message: "خطای داخلی سرور رخ داده است." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
