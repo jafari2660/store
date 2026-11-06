@@ -133,6 +133,7 @@ export async function POST(request) {
       name: name.trim(),
       phone: normalizedPhone,
       role: role || "USER",
+      isActive :true,
     };
 
     if (normalizedEmail) {

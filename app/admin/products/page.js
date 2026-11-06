@@ -46,13 +46,22 @@ const Products = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    try {
-      await fetch(`/api/products/${id}`, { method: "DELETE" });
-      setProducts(products.filter((product) => product._id !== id));
-    } catch (error) {
-      setError("مشکلی در حذف پیش آمد");
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("مشکلی در حذف محصول پیش آمد");
     }
-  };
+
+    setProducts((prev) =>
+      prev.filter((product) => product._id !== id)
+    );
+  } catch (error) {
+   setError(error);
+  }
+};
 
   const filteredProducts = products.filter((product) => {
     const search = searchTerm.trim().toLowerCase();

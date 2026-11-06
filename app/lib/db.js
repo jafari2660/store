@@ -1,15 +1,19 @@
+
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error("اتصال پیدا نشد");
+  throw new Error("آدرس اتصال دیتابیس پیدا نشد");
 }
 
 let cached = global.mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.mongoose = {
+    conn: null,
+    promise: null,
+  };
 }
 
 async function connectToDatabase() {
@@ -19,13 +23,23 @@ async function connectToDatabase() {
 
   if (!cached.promise) {
     cached.promise = mongoose
-      .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-      .then((mongoose) => {
-        return mongoose;
+      .connect(MONGODB_URI)
+      .then((mongoose) => mongoose)
+      .catch((error) => {
+        cached.promise = null;
+        cached.conn = null;
+        throw error;
       });
   }
-  cached.conn = await cached.promise;
-  return cached.conn;
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    cached.promise = null;
+    cached.conn = null;
+    throw error;
+  }
 }
 
 export default connectToDatabase;

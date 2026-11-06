@@ -350,7 +350,7 @@ export async function POST(request) {
       } else {
         await sendSms(
           normalizedPhone,
-          `کد تایید شما: ${otpCode}`
+          `کد تایید شما: ${otpCode} لغو11`
         );
       }
     } catch (error) {

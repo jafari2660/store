@@ -1,8 +1,9 @@
 import connectToDatabase from "@/app/lib/db";
 import Product from "@/models/Product";
+import Category from "@/models/Category";
 import { NextResponse } from "next/server";
 import { join, extname } from "path";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import { randomUUID } from "crypto";
 import mongoose from "mongoose";
 import Tag from "@/models/Tag";
@@ -39,19 +40,25 @@ export async function POST(request) {
     const bookFile = data.get("file");
 
     if (!bookFile) {
-      return NextResponse.json({
-        success: false,
-        message: "اپلود فایل کتاب الزامی میباشد",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "اپلود فایل کتاب الزامی میباشد",
+        },
+        { status: 400 },
+      );
     }
 
     const imageFile = data.get("image");
 
     if (!imageFile) {
-      return NextResponse.json({
-        success: false,
-        message: "اپلود تصویر الزامی میباشد",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "اپلود تصویر الزامی میباشد",
+        },
+        { status: 400 },
+      );
     }
 
     const name = data.get("name");
@@ -209,6 +216,22 @@ export async function POST(request) {
       );
     }
 
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return Response.json(
+        { message: "شناسه دسته‌بندی معتبر نیست" },
+        { status: 400 },
+      );
+    }
+
+    const categoryExists = await Category.findById(category);
+
+    if (!categoryExists) {
+      return Response.json(
+        { message: "دسته‌بندی مورد نظر پیدا نشد" },
+        { status: 404 },
+      );
+    }
+
     if (!fileType || typeof fileType !== "string") {
       return new Response(
         JSON.stringify({ message: "نوع فایل الزامی می‌باشد" }),
@@ -303,33 +326,51 @@ export async function POST(request) {
     const imageFileName = `${randomUUID()}${imageExtension}`;
     const bookFileName = `${randomUUID()}${bookExtension}`;
 
-    await writeFile(
-      join(imageDir, imageFileName),
-      Buffer.from(await imageFile.arrayBuffer()),
-    );
+    const imagePath = join(imageDir, imageFileName);
+    const bookPath = join(bookDir, bookFileName);
 
-    await writeFile(
-      join(bookDir, bookFileName),
-      Buffer.from(await bookFile.arrayBuffer()),
-    );
+    let imageUploaded = false;
+    let bookUploaded = false;
 
-    await connectToDatabase();
+    try {
+      await writeFile(imagePath, Buffer.from(await imageFile.arrayBuffer()));
+      imageUploaded = true;
 
-    const product = await Product.create({
-      name,
-      author: author.trim(),
-      description,
-      price: Number(price),
-      stock: Number(stock),
-      category,
-      image: `/uploadImage/${imageFileName}`,
-      file: bookFileName,
-      fileType: normalizedFileType,
-      tags,
-      isActive,
-      saleStatus,
-      discountPrice,
-    });
+      await writeFile(bookPath, Buffer.from(await bookFile.arrayBuffer()));
+      bookUploaded = true;
+
+      await connectToDatabase();
+
+      const product = await Product.create({
+        name,
+        author: author.trim(),
+        description,
+        price: Number(price),
+        stock: Number(stock),
+        category,
+        image: `/uploadImage/${imageFileName}`,
+        file: bookFileName,
+        fileType: normalizedFileType,
+        tags,
+        isActive,
+        saleStatus,
+        discountPrice,
+      });
+
+      return new Response(JSON.stringify(product), {
+        status: 201,
+      });
+    } catch (error) {
+      if (imageUploaded) {
+        await unlink(imagePath).catch(() => {});
+      }
+
+      if (bookUploaded) {
+        await unlink(bookPath).catch(() => {});
+      }
+
+      throw error;
+    }
 
     return new Response(JSON.stringify(product), {
       status: 201,

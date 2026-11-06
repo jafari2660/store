@@ -1,30 +1,21 @@
-
-import { cookies } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
+
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 import connectToDatabase from "@/app/lib/db";
 import User from "@/models/User";
 
 export default async function AdminLayout({ children }) {
-  const requestHeaders = await headers();
+  const session = await getServerSession(authOptions);
 
-  const cookieStore = await cookies();
-
-  const token = await getToken({
-    req: {
-      headers: {
-        cookie: cookieStore.toString(),
-      },
-    },
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-  if (!token?.id) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 
   await connectToDatabase();
 
-  const user = await User.findById(token.id)
+  const user = await User.findById(session.user.id)
     .select("role isActive")
     .lean();
 

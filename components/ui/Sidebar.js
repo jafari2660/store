@@ -12,6 +12,7 @@ import {
   FaComments,
   FaBars,
   FaTimes,
+  FaFileAlt,
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -21,7 +22,6 @@ const Sidebar = () => {
 
   return (
     <>
-     
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -34,7 +34,6 @@ const Sidebar = () => {
         {isOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-     
       {isOpen && (
         <button
           type="button"
@@ -44,7 +43,6 @@ const Sidebar = () => {
         />
       )}
 
-      
       <aside
         className={`sidebar fixed right-0 top-0 z-50 flex h-screen w-64 flex-col transition-transform duration-300
           ${isOpen ? "translate-x-0" : "translate-x-full"}
@@ -85,6 +83,15 @@ const Sidebar = () => {
           >
             <FaBox />
             مدیریت محصولات
+          </Link>
+
+          <Link
+            onClick={closeSidebar}
+            className="flex items-center gap-2"
+            href="/admin/productFiles"
+          >
+            <FaFileAlt />
+            مدیریت فایل‌های هر محصول
           </Link>
 
           <Link

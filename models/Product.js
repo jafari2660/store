@@ -1,5 +1,5 @@
+
 import mongoose from "mongoose";
-import Category from "./Category";
 
 const ProductSchema = new mongoose.Schema(
   {
@@ -15,7 +15,7 @@ const ProductSchema = new mongoose.Schema(
     },
     file: {
       type: String,
-      required: true,
+      default: "",
     },
     image: {
       type: String,
@@ -38,9 +38,8 @@ const ProductSchema = new mongoose.Schema(
     },
     fileType: {
       type: String,
-      enum: ["PDF", "DOCX", "AUDIO"],
+      enum: ["PDF", "DOCX", "AUDIO", "ZIP", "RAR"],
       required: true,
-    
     },
     isActive: {
       type: Boolean,
@@ -80,7 +79,7 @@ const ProductSchema = new mongoose.Schema(
       ],
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 export default mongoose.models.Product ||

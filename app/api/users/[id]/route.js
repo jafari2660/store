@@ -185,7 +185,6 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // از حذف آخرین مدیر فعال جلوگیری می‌کنیم.
     if (
       targetUser.role === "ADMIN" &&
       targetUser.isActive &&
