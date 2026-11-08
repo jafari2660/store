@@ -14,21 +14,32 @@ export async function requireAdmin(request) {
         authorized: false,
         response: Response.json(
           { message: "ابتدا وارد حساب کاربری شوید." },
-          { status: 401 }
+          { status: 401 },
         ),
       };
     }
 
     await connectToDatabase();
 
-    const user = await User.findById(token.id).select("role isActive");
+    const user = await User.findById(token.id).select(
+      "role isActive authVersion",
+    );
 
     if (!user || !user.isActive) {
       return {
         authorized: false,
         response: Response.json(
           { message: "حساب کاربری شما غیرفعال است یا وجود ندارد." },
-          { status: 403 }
+          { status: 403 },
+        ),
+      };
+    }
+    if ((token.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+      return {
+        authorized: false,
+        response: Response.json(
+          { message: "نشست شما منقضی شده است. دوباره وارد شوید." },
+          { status: 401 },
         ),
       };
     }
@@ -38,7 +49,7 @@ export async function requireAdmin(request) {
         authorized: false,
         response: Response.json(
           { message: "شما اجازه دسترسی به این بخش را ندارید." },
-          { status: 403 }
+          { status: 403 },
         ),
       };
     }
@@ -58,7 +69,7 @@ export async function requireAdmin(request) {
       authorized: false,
       response: Response.json(
         { message: "خطا در بررسی دسترسی." },
-        { status: 500 }
+        { status: 500 },
       ),
     };
   }
@@ -76,21 +87,33 @@ export async function requireUser(request) {
         authorized: false,
         response: Response.json(
           { message: "ابتدا وارد حساب کاربری شوید." },
-          { status: 401 }
+          { status: 401 },
         ),
       };
     }
 
     await connectToDatabase();
 
-    const user = await User.findById(token.id).select("role isActive");
+    const user = await User.findById(token.id).select(
+      "role isActive authVersion",
+    );
 
     if (!user || !user.isActive) {
       return {
         authorized: false,
         response: Response.json(
           { message: "حساب کاربری شما غیرفعال است یا وجود ندارد." },
-          { status: 403 }
+          { status: 403 },
+        ),
+      };
+    }
+
+    if ((token.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+      return {
+        authorized: false,
+        response: Response.json(
+          { message: "نشست شما منقضی شده است. دوباره وارد شوید." },
+          { status: 401 },
         ),
       };
     }
@@ -110,7 +133,7 @@ export async function requireUser(request) {
       authorized: false,
       response: Response.json(
         { message: "خطا در بررسی احراز هویت." },
-        { status: 500 }
+        { status: 500 },
       ),
     };
   }

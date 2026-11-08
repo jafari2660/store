@@ -1,4 +1,3 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
@@ -18,7 +17,7 @@ export async function POST(request) {
     ) {
       return Response.json(
         { message: "تمام فیلدها الزامی هستند." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +32,7 @@ export async function POST(request) {
     if (!/^09\d{9}$/.test(normalizedPhone)) {
       return Response.json(
         { message: "شماره موبایل صحیح نیست." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,14 +41,14 @@ export async function POST(request) {
     if (!/^\d{6}$/.test(normalizedCode)) {
       return Response.json(
         { message: "کد تأیید باید ۶ رقم باشد." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 8 || password.length > 128) {
       return Response.json(
         { message: "رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,21 +59,21 @@ export async function POST(request) {
     if (!user) {
       return Response.json(
         { message: "کاربری با این شماره موبایل پیدا نشد." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!user.isActive) {
       return Response.json(
         { message: "حساب کاربری شما غیرفعال است." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     if (user.password) {
       return Response.json(
         { message: "شما قبلاً رمز عبور تعیین کرده‌اید." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -91,7 +90,7 @@ export async function POST(request) {
     if (!otp) {
       return Response.json(
         { message: "کد تأیید معتبر نیست یا منقضی شده است. دوباره کد بگیرید." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -103,7 +102,7 @@ export async function POST(request) {
           expiresAt: { $gt: new Date() },
         },
         { $inc: { attempts: 1 } },
-        { new: true }
+        { new: true },
       );
 
       if (updatedOtp && updatedOtp.attempts >= 3) {
@@ -112,7 +111,7 @@ export async function POST(request) {
 
       return Response.json(
         { message: "کد وارد شده صحیح نیست." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -130,7 +129,7 @@ export async function POST(request) {
     if (!consumedOtp) {
       return Response.json(
         { message: "کد تأیید معتبر نیست یا قبلاً استفاده شده است." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -143,27 +142,27 @@ export async function POST(request) {
           { password: "" },
         ],
       },
-      { $set: { password: hashedPassword } },
-      { new: true }
+      { $set: { password: hashedPassword }, $inc: { authVersion: 1 } },
+      { new: true },
     );
 
     if (!updatedUser) {
       return Response.json(
         { message: "رمز عبور قبلاً برای حساب شما ثبت شده است." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     return Response.json(
       { message: "رمز عبور با موفقیت ثبت شد." },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Set Password Error:", error);
 
     return Response.json(
       { message: "خطای داخلی سرور رخ داده است." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

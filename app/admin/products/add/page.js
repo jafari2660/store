@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import AuthWrapper from "@/components/auth/Auth";
 
 const AddProduct = () => {
-  const [file, setFile] = useState(null);
   const [name, setName] = useState("");
-  const [author, setAuthor] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("0");
@@ -71,16 +69,6 @@ const AddProduct = () => {
       return false;
     }
 
-    if (!author.trim()) {
-      setFormError("نام نویسنده الزامی می‌باشد");
-      return false;
-    }
-
-    if (author.trim().length < 2 || author.trim().length > 100) {
-      setFormError("نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد");
-      return false;
-    }
-
     if (!description.trim()) {
       setFormError("توضیحات محصول الزامی می‌باشد");
       return false;
@@ -88,11 +76,6 @@ const AddProduct = () => {
 
     if (description.trim().length < 3 || description.trim().length > 200) {
       setFormError("توضیحات باید بین ۳ تا ۲۰۰ کاراکتر باشد");
-      return false;
-    }
-
-    if (!file) {
-      setFormError("فایل محصول را انتخاب کنید");
       return false;
     }
 
@@ -154,16 +137,6 @@ const AddProduct = () => {
     setError(null);
     setFormError("");
 
-    if (!file) {
-      setFormError("فایل محصول الزامی می‌باشد");
-      return;
-    }
-
-    if (!author.trim()) {
-      setFormError("نام نویسنده محصول الزامی می‌باشد");
-      return;
-    }
-
     if (!image) {
       setFormError("تصویر محصول الزامی می‌باشد");
       return;
@@ -208,10 +181,7 @@ const AddProduct = () => {
       const formData = new FormData();
 
       formData.append("name", name.trim());
-      formData.append("author", author.trim());
       formData.append("description", description.trim());
-
-      formData.append("file", file);
       formData.append("image", image);
 
       formData.append("category", category);
@@ -287,20 +257,6 @@ const AddProduct = () => {
 
                 <div className="mb-3">
                   <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
-                    نویسنده
-                  </label>
-
-                  <input
-                    type="text"
-                    placeholder=" نام نویسنده "
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    className="input-field w-full min-w-0"
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
                     توضیحات
                   </label>
 
@@ -309,17 +265,6 @@ const AddProduct = () => {
                     placeholder="توضیحات کتاب را بنویسید ..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="input-field w-full min-w-0"
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
-                    فایل
-                  </label>
-                  <input
-                    type="file"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
                     className="input-field w-full min-w-0"
                   />
                 </div>

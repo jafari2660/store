@@ -33,7 +33,7 @@ const ProductFileSchema = new mongoose.Schema(
       type: String,
       required: true,
       lowercase: true,
-     enum: ["pdf", "zip", "rar", "mp3", "wav", "m4a"],
+      enum: ["pdf", "docx", "zip", "rar", "mp3", "wav", "m4a"],
     },
 
     mimeType: {
@@ -52,8 +52,26 @@ const ProductFileSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+
+    author: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    speaker: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    fileHash: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 ProductFileSchema.index({ product: 1, order: 1 });

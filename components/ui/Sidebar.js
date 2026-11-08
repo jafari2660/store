@@ -64,7 +64,7 @@ const Sidebar = () => {
             href="/admin/categories"
           >
             <FaLayerGroup />
-            دسته بندی ها
+           مدیریت دسته بندی ها
           </Link>
 
           <Link

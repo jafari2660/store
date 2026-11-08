@@ -37,18 +37,6 @@ export async function POST(request) {
     }
     const data = await request.formData();
 
-    const bookFile = data.get("file");
-
-    if (!bookFile) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "اپلود فایل کتاب الزامی میباشد",
-        },
-        { status: 400 },
-      );
-    }
-
     const imageFile = data.get("image");
 
     if (!imageFile) {
@@ -62,7 +50,6 @@ export async function POST(request) {
     }
 
     const name = data.get("name");
-    const author = data.get("author");
     const description = data.get("description");
     const category = data.get("category");
     const fileType = data.get("fileType");
@@ -159,22 +146,6 @@ export async function POST(request) {
       );
     }
 
-    if (!author || typeof author !== "string" || author.trim() === "") {
-      return new Response(
-        JSON.stringify({ message: "نام نویسنده محصول الزامی می‌باشد" }),
-        { status: 400 },
-      );
-    }
-
-    if (author.length < 3 || author.length > 30) {
-      return new Response(
-        JSON.stringify({
-          message: "نام نویسنده باید بین ۳ تا ۳۰ کاراکتر باشد",
-        }),
-        { status: 400 },
-      );
-    }
-
     if (
       !description ||
       typeof description !== "string" ||
@@ -191,13 +162,6 @@ export async function POST(request) {
         JSON.stringify({
           message: "توضیحات باید بین ۳ تا ۲۰۰ کاراکتر باشد",
         }),
-        { status: 400 },
-      );
-    }
-
-    if (!(bookFile instanceof File) || bookFile.size === 0) {
-      return Response.json(
-        { success: false, message: "فایل کتاب الزامی است" },
         { status: 400 },
       );
     }
@@ -271,7 +235,6 @@ export async function POST(request) {
     }
 
     const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-    const MAX_BOOK_SIZE = 50 * 1024 * 1024;
 
     if (imageFile.size > MAX_IMAGE_SIZE) {
       return Response.json(
@@ -280,15 +243,7 @@ export async function POST(request) {
       );
     }
 
-    if (bookFile.size > MAX_BOOK_SIZE) {
-      return Response.json(
-        { message: "حجم فایل کتاب نباید بیشتر از ۵۰ مگابایت باشد." },
-        { status: 400 },
-      );
-    }
-
     const imageExtension = extname(imageFile.name).toLowerCase();
-    const bookExtension = extname(bookFile.name).toLowerCase();
 
     const allowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
@@ -299,57 +254,32 @@ export async function POST(request) {
       );
     }
 
-    const allowedBookTypes = {
-      PDF: [".pdf"],
-      DOCX: [".docx"],
-      AUDIO: [".mp3", ".m4a"],
-    };
-
     const normalizedFileType = fileType.toUpperCase();
 
-    if (
-      !Object.hasOwn(allowedBookTypes, normalizedFileType) ||
-      !allowedBookTypes[normalizedFileType].includes(bookExtension)
-    ) {
-      return Response.json(
-        { message: "نوع یا پسوند فایل کتاب معتبر نیست" },
-        { status: 400 },
-      );
-    }
-
     const imageDir = join(process.cwd(), "public/uploadImage");
-    const bookDir = join(process.cwd(), "private_uploads", "books");
 
     await mkdir(imageDir, { recursive: true });
-    await mkdir(bookDir, { recursive: true });
 
     const imageFileName = `${randomUUID()}${imageExtension}`;
-    const bookFileName = `${randomUUID()}${bookExtension}`;
 
     const imagePath = join(imageDir, imageFileName);
-    const bookPath = join(bookDir, bookFileName);
 
     let imageUploaded = false;
-    let bookUploaded = false;
 
     try {
       await writeFile(imagePath, Buffer.from(await imageFile.arrayBuffer()));
       imageUploaded = true;
 
-      await writeFile(bookPath, Buffer.from(await bookFile.arrayBuffer()));
-      bookUploaded = true;
-
       await connectToDatabase();
 
       const product = await Product.create({
         name,
-        author: author.trim(),
         description,
         price: Number(price),
         stock: Number(stock),
         category,
         image: `/uploadImage/${imageFileName}`,
-        file: bookFileName,
+        file: "",
         fileType: normalizedFileType,
         tags,
         isActive,
@@ -365,16 +295,8 @@ export async function POST(request) {
         await unlink(imagePath).catch(() => {});
       }
 
-      if (bookUploaded) {
-        await unlink(bookPath).catch(() => {});
-      }
-
       throw error;
     }
-
-    return new Response(JSON.stringify(product), {
-      status: 201,
-    });
   } catch (error) {
     console.error("PRODUCT CREATE ERROR:", error);
 

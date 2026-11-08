@@ -21,7 +21,6 @@ const Login = () => {
 
   const router = useRouter();
 
- 
   const validateIdentifier = (value) => {
     const raw = value.trim();
 
@@ -216,7 +215,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => changeLoginMode("password")}
-                  className={`h-11 rounded-full text-sm font-semibold ${
+                  className={`flex h-11 items-center justify-center rounded-full text-center text-sm font-semibold ${
                     loginMode === "password"
                       ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-background)] text-[var(--color-text)]"
@@ -228,7 +227,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => changeLoginMode("otp")}
-                  className={`h-11 rounded-full text-sm font-semibold ${
+                  className={`flex h-11 items-center justify-center rounded-full text-center text-sm font-semibold ${
                     loginMode === "otp"
                       ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-background)] text-[var(--color-text)]"
@@ -316,9 +315,7 @@ const Login = () => {
                           type="password"
                           autoComplete="current-password"
                           value={loginPassword}
-                          onChange={(e) =>
-                            setLoginPassword(e.target.value)
-                          }
+                          onChange={(e) => setLoginPassword(e.target.value)}
                           placeholder="رمز عبور خود را وارد کنید"
                           required
                           className="h-14 w-full rounded-full bg-[var(--color-background)] px-5 text-sm outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
@@ -386,7 +383,6 @@ const Login = () => {
                           : "ارسال کد تأیید"}
                   </button>
 
-                 
                   {loginMode === "otp" && otpSent && (
                     <button
                       type="button"

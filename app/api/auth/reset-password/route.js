@@ -1,73 +1,122 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+
+function normalizePhone(phone) {
+  let normalized = phone.trim();
+
+  if (normalized.startsWith("+98")) {
+    normalized = `0${normalized.slice(3)}`;
+  } else if (normalized.startsWith("9")) {
+    normalized = `0${normalized}`;
+  }
+
+  return normalized;
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
 
 export async function POST(request) {
   try {
     await connectToDatabase();
 
     const body = await request.json();
-    const { phone, code, password } = body || {};
 
-    if (
-      typeof phone !== "string" ||
-      typeof code !== "string" ||
-      typeof password !== "string"
-    ) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return Response.json(
+        { message: "اطلاعات ارسالی معتبر نیست." },
+        { status: 400 },
+      );
+    }
+
+    const { identifier, phone, email, code, password } = body;
+
+    if (typeof code !== "string" || typeof password !== "string") {
       return Response.json(
         { message: "تمام فیلدها الزامی هستند." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    let normalizedPhone = phone.trim();
+    const rawIdentifier = (
+      typeof identifier === "string" && identifier.trim()
+        ? identifier
+        : typeof email === "string" && email.trim()
+          ? email
+          : typeof phone === "string"
+            ? phone
+            : ""
+    ).trim();
 
-    if (normalizedPhone.startsWith("+98")) {
-      normalizedPhone = `0${normalizedPhone.slice(3)}`;
-    } else if (normalizedPhone.startsWith("9")) {
-      normalizedPhone = `0${normalizedPhone}`;
-    }
-
-    if (!/^09\d{9}$/.test(normalizedPhone)) {
+    if (!rawIdentifier) {
       return Response.json(
-        { message: "شماره موبایل وارد شده صحیح نیست." },
-        { status: 400 }
+        { message: "ایمیل یا شماره موبایل الزامی است." },
+        { status: 400 },
       );
     }
 
-    const normalizedCode = code.trim();
+    let normalizedPhone = "";
+    let normalizedEmail = "";
+    let channel = "sms";
+    let user = null;
+    let otpQuery = {};
 
-    if (!/^\d{6}$/.test(normalizedCode)) {
-      return Response.json(
-        { message: "کد تأیید باید شامل ۶ رقم باشد." },
-        { status: 400 }
-      );
+    if (rawIdentifier.includes("@")) {
+      normalizedEmail = rawIdentifier.toLowerCase();
+
+      if (!isValidEmail(normalizedEmail)) {
+        return Response.json(
+          { message: "آدرس ایمیل وارد شده صحیح نیست." },
+          { status: 400 },
+        );
+      }
+
+      channel = "email";
+
+      user = await User.findOne({
+        email: normalizedEmail,
+      }).select("+password");
+
+      otpQuery = {
+        email: normalizedEmail,
+        channel: "email",
+      };
+    } else {
+      normalizedPhone = normalizePhone(rawIdentifier);
+
+      if (!/^09\d{9}$/.test(normalizedPhone)) {
+        return Response.json(
+          { message: "شماره موبایل وارد شده صحیح نیست." },
+          { status: 400 },
+        );
+      }
+
+      channel = "sms";
+
+      user = await User.findOne({
+        phone: normalizedPhone,
+      }).select("+password");
+
+      otpQuery = {
+        phone: normalizedPhone,
+        $or: [{ channel: "sms" }, { channel: { $exists: false } }],
+      };
     }
-
-    if (password.length < 8 || password.length > 128) {
-      return Response.json(
-        { message: "رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد." },
-        { status: 400 }
-      );
-    }
-
-    const user = await User.findOne({
-      phone: normalizedPhone,
-    }).select("+password");
 
     if (!user) {
       return Response.json(
-        { message: "کاربری با این شماره موبایل یافت نشد." },
-        { status: 404 }
+        { message: "کاربری با این مشخصات یافت نشد." },
+        { status: 404 },
       );
     }
 
     if (!user.isActive) {
       return Response.json(
         { message: "حساب کاربری شما غیرفعال است." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -77,15 +126,30 @@ export async function POST(request) {
           message:
             "شما هنوز رمز عبور تعیین نکرده‌اید. ابتدا باید رمز اولیه خود را تعیین کنید.",
         },
-        { status: 409 }
+        { status: 409 },
+      );
+    }
+
+    const normalizedCode = code.trim();
+
+    if (!/^\d{6}$/.test(normalizedCode)) {
+      return Response.json(
+        { message: "کد تأیید باید شامل ۶ رقم باشد." },
+        { status: 400 },
+      );
+    }
+
+    if (password.length < 8 || password.length > 128) {
+      return Response.json(
+        { message: "رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد." },
+        { status: 400 },
       );
     }
 
     const now = new Date();
 
     const otp = await Otp.findOne({
-      phone: normalizedPhone,
-      channel: "sms",
+      ...otpQuery,
       kind: 4,
       expiresAt: { $gt: now },
       attempts: { $lt: 3 },
@@ -97,7 +161,7 @@ export async function POST(request) {
           message:
             "کد تأیید معتبر نیست یا منقضی شده است. دوباره کد دریافت کنید.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,39 +173,22 @@ export async function POST(request) {
           expiresAt: { $gt: new Date() },
         },
         { $inc: { attempts: 1 } },
-        { new: true }
+        { new: true },
       );
 
       if (updatedOtp && updatedOtp.attempts >= 3) {
-        await Otp.deleteOne({ _id: updatedOtp._id });
+        await Otp.deleteOne({
+          _id: updatedOtp._id,
+        });
       }
 
       return Response.json(
         { message: "کد تأیید وارد شده صحیح نیست." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-
-    const consumedOtp = await Otp.findOneAndDelete({
-      _id: otp._id,
-      code: normalizedCode,
-      channel: "sms",
-      kind: 4,
-      expiresAt: { $gt: new Date() },
-      attempts: { $lt: 3 },
-    });
-
-    if (!consumedOtp) {
-      return Response.json(
-        {
-          message:
-            "کد تأیید معتبر نیست یا قبلاً استفاده شده است.",
-        },
-        { status: 400 }
-      );
-    }
 
     const updatedUser = await User.findOneAndUpdate(
       {
@@ -149,27 +196,49 @@ export async function POST(request) {
         isActive: true,
         password: { $exists: true, $ne: null },
       },
-      { $set: { password: hashedPassword } },
-      { new: true }
+      {
+        $set: {
+          password: hashedPassword,
+        },
+        $inc: {
+          authVersion: 1,
+        },
+      },
+      { new: true },
     );
 
     if (!updatedUser) {
       return Response.json(
         { message: "امکان تغییر رمز عبور وجود ندارد." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
+    const consumedOtp = await Otp.findOneAndDelete({
+      _id: otp._id,
+      ...otpQuery,
+      code: normalizedCode,
+      kind: 4,
+      expiresAt: { $gt: new Date() },
+      attempts: { $lt: 3 },
+    });
+
+    if (!consumedOtp) {
+      console.error("OTP could not be consumed after password update");
+    }
+
     return Response.json(
-      { message: "رمز عبور شما با موفقیت تغییر کرد." },
-      { status: 200 }
+      {
+        message: "رمز عبور شما با موفقیت تغییر کرد.",
+      },
+      { status: 200 },
     );
   } catch (error) {
     console.error("Reset Password Error:", error);
 
     return Response.json(
       { message: "خطای داخلی سرور رخ داده است." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -72,7 +72,6 @@ export async function PUT(request, { params }) {
     const formData = await request.formData();
 
     const name = formData.get("name");
-    const author = formData.get("author");
     const description = formData.get("description");
     const category = formData.get("category");
     const fileType = formData.get("fileType");
@@ -81,13 +80,6 @@ export async function PUT(request, { params }) {
     if (typeof name !== "string" || !name.trim()) {
       return Response.json(
         { message: "نام محصول الزامی است" },
-        { status: 400 }
-      );
-    }
-
-    if (typeof author !== "string" || !author.trim()) {
-      return Response.json(
-        { message: "نام نویسنده الزامی است" },
         { status: 400 }
       );
     }
@@ -292,7 +284,6 @@ export async function PUT(request, { params }) {
 
     const updateData = {
       name: name.trim(),
-      author: author.trim(),
       description:
         typeof description === "string" ? description.trim() : "",
       category,

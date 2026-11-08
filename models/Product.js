@@ -60,11 +60,6 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    author: {
-      type: String,
-      required: true,
-      trim: true,
-    },
     discountPrice: {
       type: Number,
       default: null,

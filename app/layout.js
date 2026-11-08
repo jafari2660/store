@@ -1,5 +1,7 @@
 import "bootstrap/dist/css/bootstrap.rtl.min.css";
 import "./styles/global.css";
+import "./styles/style.css";
+
 import SessionProviderWrapper from "@/components/auth/SessionProviderWrapper";
 
 export const metadata = {

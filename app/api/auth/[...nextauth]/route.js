@@ -1,6 +1,6 @@
 import connectToDatabase from "@/app/lib/db";
 import User from "@/models/User";
-import Otp from "@/models/Otp";
+import { verifyOtp } from "@/app/lib/verifyOtp";
 import CredentialsProvider from "next-auth/providers/credentials";
 import NextAuth from "next-auth";
 import bcrypt from "bcryptjs";
@@ -44,7 +44,7 @@ export const authOptions = {
         await connectToDatabase();
 
         const identifier = normalizeIdentifier(
-          credentials?.identifier || credentials?.phone
+          credentials?.identifier || credentials?.phone,
         );
 
         const password = credentials?.password;
@@ -77,6 +77,7 @@ export const authOptions = {
           phone: user.phone,
           email: user.email,
           role: user.role,
+          authVersion: user.authVersion ?? 0,
         };
       },
     }),
@@ -95,11 +96,7 @@ export const authOptions = {
         const identifier = normalizeIdentifier(credentials?.identifier);
         const code = credentials?.code;
 
-        if (
-          !identifier ||
-          typeof code !== "string" ||
-          !/^\d{6}$/.test(code)
-        ) {
+        if (!identifier || typeof code !== "string" || !/^\d{6}$/.test(code)) {
           throw new Error("اطلاعات ورود معتبر نیست.");
         }
 
@@ -110,65 +107,17 @@ export const authOptions = {
         if (!user || !user.isActive) {
           throw new Error("کد تأیید یا اطلاعات حساب معتبر نیست.");
         }
+        const otpResult = await verifyOtp({
+          phone: identifier.type === "phone" ? identifier.value : undefined,
 
-        const now = new Date();
-        const identifierQuery =
-          identifier.type === "email"
-            ? { email: identifier.value }
-            : { phone: identifier.value };
+          email: identifier.type === "email" ? identifier.value : undefined,
 
-        const channelQuery =
-          identifier.type === "email"
-            ? { channel: "email" }
-            : {
-                $or: [
-                  { channel: "sms" },
-                  { channel: { $exists: false } },
-                ],
-              };
-
-        const otp = await Otp.findOne({
-          ...identifierQuery,
-          ...channelQuery,
+          code: code.trim(),
           kind: 2,
-          expiresAt: { $gt: now },
-          attempts: { $lt: 3 },
-        }).sort({ createdAt: -1 });
-
-        if (!otp) {
-          throw new Error("کد تأیید معتبر نیست یا منقضی شده است.");
-        }
-
-        if (otp.code !== code) {
-          const updatedOtp = await Otp.findOneAndUpdate(
-            {
-              _id: otp._id,
-              attempts: { $lt: 3 },
-              expiresAt: { $gt: new Date() },
-            },
-            { $inc: { attempts: 1 } },
-            { new: true }
-          );
-
-          if (updatedOtp && updatedOtp.attempts >= 3) {
-            await Otp.deleteOne({
-              _id: otp._id,
-              attempts: { $gte: 3 },
-            });
-          }
-
-          throw new Error("کد تأیید اشتباه است.");
-        }
-
-        const consumedOtp = await Otp.findOneAndDelete({
-          _id: otp._id,
-          code,
-          attempts: { $lt: 3 },
-          expiresAt: { $gt: new Date() },
         });
 
-        if (!consumedOtp) {
-          throw new Error("کد تأیید معتبر نیست یا قبلاً استفاده شده است.");
+        if (!otpResult.success) {
+          throw new Error(otpResult.message);
         }
 
         return {
@@ -177,17 +126,18 @@ export const authOptions = {
           phone: user.phone,
           email: user.email,
           role: user.role,
+           authVersion: user.authVersion ?? 0,
         };
       },
     }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, 
+    maxAge: 8 * 60 * 60,
   },
 
   jwt: {
-    maxAge: 8 * 60 * 60, 
+    maxAge: 8 * 60 * 60,
   },
 
   secret: process.env.NEXTAUTH_SECRET,
@@ -200,6 +150,7 @@ export const authOptions = {
         token.phone = user.phone;
         token.email = user.email;
         token.role = user.role;
+        token.authVersion = user.authVersion ?? 0;
       }
 
       return token;
@@ -212,6 +163,7 @@ export const authOptions = {
         phone: token.phone,
         email: token.email,
         role: token.role,
+         authVersion: token.authVersion ?? 0,
       };
 
       return session;

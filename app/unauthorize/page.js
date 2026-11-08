@@ -19,7 +19,7 @@ export default function UnauthorizedPage() {
           </div>
         </div>
 
-        <h1 className="mb-4 text-2xl font-bold text-[var(--color-primary)]">
+        <h1 className="mb-4 text-2xl text-center font-bold text-[var(--color-primary)]">
           دسترسی غیرمجاز
         </h1>
 
@@ -30,7 +30,7 @@ export default function UnauthorizedPage() {
 
         <button
           onClick={() => router.replace("/")}
-          className="w-full rounded-xl bg-[var(--color-primary)] px-6 py-3 font-semibold text-white transition hover:opacity-90"
+          className="w-full text-center rounded-xl bg-[var(--color-primary)] px-6 py-3 font-semibold text-white transition hover:opacity-90"
         >
           بازگشت به صفحه اصلی
         </button>

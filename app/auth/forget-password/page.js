@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function ForgetPasswordPage() {
-  const router = useRouter();
+  const [identifierType, setIdentifierType] = useState("phone");
+  const [identifier, setIdentifier] = useState("");
 
-  const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,22 +16,30 @@ export default function ForgetPasswordPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-
   const handleSendOtp = async (e) => {
     e.preventDefault();
 
     setError("");
     setMessage("");
 
-     const rawPhone = phone.trim();
+    let normalizedIdentifier = identifier.trim();
 
-          const normalizedPhone = rawPhone.startsWith("+98")
-            ? `0${rawPhone.slice(3)}`
-            : rawPhone;
-            
-    if (!/^(\+98|0)?9\d{9}$/.test(normalizedPhone)) {
-      setError("شماره موبایل معتبر نیست");
-      return;
+    if (identifierType === "phone") {
+      if (normalizedIdentifier.startsWith("+98")) {
+        normalizedIdentifier = `0${normalizedIdentifier.slice(3)}`;
+      }
+
+      if (!/^09\d{9}$/.test(normalizedIdentifier)) {
+        setError("شماره موبایل معتبر نیست");
+        return;
+      }
+    } else {
+      normalizedIdentifier = normalizedIdentifier.toLowerCase();
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedIdentifier)) {
+        setError("آدرس ایمیل معتبر نیست");
+        return;
+      }
     }
 
     try {
@@ -44,7 +51,7 @@ export default function ForgetPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: normalizedPhone,
+          identifier: normalizedIdentifier,
           type: "reset-password",
         }),
       });
@@ -56,7 +63,7 @@ export default function ForgetPasswordPage() {
         return;
       }
 
-      setPhone(normalizedPhone);
+      setIdentifier(normalizedIdentifier);
       setStep(2);
       setMessage("کد تایید برای شما ارسال شد");
     } catch (error) {
@@ -65,7 +72,6 @@ export default function ForgetPasswordPage() {
       setLoading(false);
     }
   };
-
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -97,7 +103,7 @@ export default function ForgetPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: phone.trim(),
+          identifier: identifier.trim(),
           code: code.trim(),
           password,
         }),
@@ -128,7 +134,7 @@ export default function ForgetPasswordPage() {
         </h1>
 
         <p className="mb-6 text-center text-sm text-[var(--color-muted)]">
-          {step === 1 && "شماره موبایل خود را وارد کنید"}
+          {step === 1 && "شماره موبایل یا ایمیل خود را وارد کنید"}
           {step === 2 && "کد تایید و رمز عبور جدید را وارد کنید"}
           {step === 3 && "رمز عبور شما با موفقیت تغییر کرد"}
         </p>
@@ -148,11 +154,52 @@ export default function ForgetPasswordPage() {
         {step === 1 ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
 
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setIdentifierType("phone");
+                  setIdentifier("");
+                  setError("");
+                }}
+                className={`rounded-lg border p-3 text-sm transition ${
+                  identifierType === "phone"
+                    ? "border-[var(--color-primary)] bg-[var(--color-hover)] text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] text-[var(--color-muted)]"
+                }`}
+              >
+                شماره موبایل
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setIdentifierType("email");
+                  setIdentifier("");
+                  setError("");
+                }}
+                className={`rounded-lg border p-3 text-sm transition ${
+                  identifierType === "email"
+                    ? "border-[var(--color-primary)] bg-[var(--color-hover)] text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] text-[var(--color-muted)]"
+                }`}
+              >
+                ایمیل
+              </button>
+            </div>
+
             <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="شماره موبایل"
+              type={identifierType === "phone" ? "tel" : "email"}
+              dir="ltr"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder={
+                identifierType === "phone"
+                  ? "شماره موبایل"
+                  : "example@email.com"
+              }
               disabled={loading}
               className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
             />
@@ -168,6 +215,17 @@ export default function ForgetPasswordPage() {
           </form>
         ) : step === 2 ? (
           <form onSubmit={handleResetPassword} className="space-y-4">
+
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="کد تایید ۶ رقمی"
+              disabled={loading}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
+            />
 
             <input
               type="password"
@@ -186,18 +244,6 @@ export default function ForgetPasswordPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
             />
-
-             <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="کد تایید ۶ رقمی"
-              disabled={loading}
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-hover)] disabled:opacity-50"
-            />
-
 
             <button
               type="submit"

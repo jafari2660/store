@@ -1,5 +1,5 @@
 import connectToDatabase from "@/app/lib/db";
-import Otp from "@/models/Otp";
+import { verifyOtp } from "@/app/lib/verifyOtp";
 import User from "@/models/User";
 
 function normalizePhone(phone) {
@@ -92,80 +92,16 @@ export async function POST(request) {
         { status: 403 }
       );
     }
-
-    const now = new Date();
-    const MAX_ATTEMPTS = 3;
-
-    const otpQuery = {
-      kind: 2,
-      channel,
-      expiresAt: { $gt: now },
-      ...(channel === "email"
-        ? { email: normalizedEmail }
-        : { phone: normalizedPhone }),
-    };
-
-    const activeOtp = await Otp.findOne(otpQuery).sort({
-      createdAt: -1,
-    });
-
-    if (!activeOtp) {
-      return Response.json(
-        { message: "کد تأیید نامعتبر یا منقضی شده است." },
-        { status: 401 }
-      );
-    }
-
-    if (activeOtp.attempts >= MAX_ATTEMPTS) {
-      await Otp.deleteOne({ _id: activeOtp._id });
-
-      return Response.json(
-        {
-          message:
-            "تعداد تلاش‌های مجاز تمام شده است. کد جدید درخواست کنید.",
-        },
-        { status: 429 }
-      );
-    }
-
-    if (activeOtp.code !== normalizedCode) {
-      const updatedOtp = await Otp.findOneAndUpdate(
-        {
-          _id: activeOtp._id,
-          attempts: { $lt: MAX_ATTEMPTS },
-          expiresAt: { $gt: new Date() },
-        },
-        {
-          $inc: { attempts: 1 },
-        },
-        {
-          new: true,
-        }
-      );
-
-      if (updatedOtp && updatedOtp.attempts >= MAX_ATTEMPTS) {
-        await Otp.deleteOne({
-          _id: updatedOtp._id,
-          attempts: { $gte: MAX_ATTEMPTS },
-        });
-      }
-
-      return Response.json(
-        { message: "کد تأیید نامعتبر است." },
-        { status: 401 }
-      );
-    }
-
-    const consumedOtp = await Otp.findOneAndDelete({
-      _id: activeOtp._id,
+    const otpResult = await verifyOtp({
+      phone: channel === "sms" ? normalizedPhone : undefined,
+      email: channel === "email" ? normalizedEmail : undefined,
       code: normalizedCode,
-      attempts: { $lt: MAX_ATTEMPTS },
-      expiresAt: { $gt: new Date() },
+      kind: 2,
     });
 
-    if (!consumedOtp) {
+    if (!otpResult.success) {
       return Response.json(
-        { message: "کد تأیید نامعتبر یا منقضی شده است." },
+        { message: otpResult.message },
         { status: 401 }
       );
     }
@@ -174,6 +110,7 @@ export async function POST(request) {
       { message: "اطلاعات تأیید شد." },
       { status: 200 }
     );
+
   } catch (error) {
     console.error("Verify OTP Error:", error);
 

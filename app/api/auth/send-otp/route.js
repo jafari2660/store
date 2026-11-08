@@ -115,15 +115,23 @@ export async function POST(request) {
     let channel = "sms";
     let rateLimitIdentifier = "";
 
-    if (type === "login") {
-      if (typeof identifier !== "string" || !identifier.trim()) {
+    if (type === "login" || type === "reset-password") {
+      const rawIdentifier = (
+        typeof identifier === "string" && identifier.trim()
+          ? identifier
+          : typeof email === "string" && email.trim()
+            ? email
+            : typeof phone === "string"
+              ? phone
+              : ""
+      ).trim();
+
+      if (!rawIdentifier) {
         return Response.json(
           { message: "ایمیل یا شماره موبایل را وارد کنید." },
           { status: 400 }
         );
       }
-
-      const rawIdentifier = identifier.trim();
 
       if (rawIdentifier.includes("@")) {
         normalizedEmail = rawIdentifier.toLowerCase();
@@ -140,7 +148,7 @@ export async function POST(request) {
 
         const existingUser = await User.findOne({
           email: normalizedEmail,
-        });
+        }).select("+password");
 
         if (!existingUser) {
           return Response.json(
@@ -153,6 +161,16 @@ export async function POST(request) {
           return Response.json(
             { message: "حساب کاربری شما غیرفعال است." },
             { status: 403 }
+          );
+        }
+
+        if (type === "reset-password" && !existingUser.password) {
+          return Response.json(
+            {
+              message:
+                "شما هنوز رمز عبور تعیین نکرده‌اید. ابتدا باید رمز اولیه خود را تعیین کنید.",
+            },
+            { status: 409 }
           );
         }
       } else {
@@ -170,7 +188,7 @@ export async function POST(request) {
 
         const existingUser = await User.findOne({
           phone: normalizedPhone,
-        });
+        }).select("+password");
 
         if (!existingUser) {
           return Response.json(
@@ -183,6 +201,16 @@ export async function POST(request) {
           return Response.json(
             { message: "حساب کاربری شما غیرفعال است." },
             { status: 403 }
+          );
+        }
+
+        if (type === "reset-password" && !existingUser.password) {
+          return Response.json(
+            {
+              message:
+                "شما هنوز رمز عبور تعیین نکرده‌اید. ابتدا باید رمز اولیه خود را تعیین کنید.",
+            },
+            { status: 409 }
           );
         }
       }
@@ -248,7 +276,7 @@ export async function POST(request) {
         }
       }
 
-      if (type === "set-password" || type === "reset-password") {
+      if (type === "set-password") {
         const existingUser = await User.findOne({
           phone: normalizedPhone,
         }).select("+password");
@@ -267,21 +295,11 @@ export async function POST(request) {
           );
         }
 
-        if (type === "set-password" && existingUser.password) {
+        if (existingUser.password) {
           return Response.json(
             {
               message:
                 "شما قبلاً رمز عبور تعیین کرده‌اید. برای تغییر رمز از بخش فراموشی رمز استفاده کنید.",
-            },
-            { status: 409 }
-          );
-        }
-
-        if (type === "reset-password" && !existingUser.password) {
-          return Response.json(
-            {
-              message:
-                "شما هنوز رمز عبور تعیین نکرده‌اید. ابتدا باید رمز اولیه خود را تعیین کنید.",
             },
             { status: 409 }
           );
@@ -344,7 +362,9 @@ export async function POST(request) {
       if (channel === "email") {
         await sendEmail(
           normalizedEmail,
-          "کد تأیید ورود",
+          type === "reset-password"
+            ? "کد تأیید فراموشی رمز عبور"
+            : "کد تأیید ورود",
           `کد تأیید شما: ${otpCode}`
         );
       } else {

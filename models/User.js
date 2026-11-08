@@ -33,10 +33,16 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    
+
     password: {
       type: String,
       select: false,
+    },
+
+    authVersion: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {
