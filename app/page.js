@@ -2,6 +2,8 @@ import LogoutButton from "@/components/auth/LogoutButton";
 import React from "react";
 import SlideShow from "@/components/home/SlideShow";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
+import AdsSection from "@/components/home/AdsSection";
+import BrandSection from "@/components/home/BrandSection";
 
 const Home = () => {
   return (
@@ -12,13 +14,16 @@ const Home = () => {
       </section>
 
       <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
-       
         <FeaturedProducts />
       </section>
 
-      <section className="mx-auto my-6 w-full max-w-[1320px] px-3"></section>
+      <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
+        <AdsSection />
+      </section>
 
-      <section className="mx-auto my-6 w-full max-w-[1320px] px-3"></section>
+      <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
+        <BrandSection />
+      </section>
     </main>
   );
 };
