@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -38,8 +37,8 @@ const ProductCard = ({ product }) => {
         {/* Book Image */}
         <div className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-lg p-3 sm:h-[210px]">
           <Image
-            src={product.image}
-            alt={product.name}
+            src={product.image?.replace("/uploadImage/", "/images/product/")}
+            alt={product?.name || "محصول"}
             width={300}
             height={400}
             sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 220px"
@@ -67,9 +66,7 @@ const ProductCard = ({ product }) => {
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-[var(--color-muted)]">
-              قیمت:
-            </span>
+            <span className="text-xs text-[var(--color-muted)]">قیمت:</span>
             <span className="text-sm font-bold text-[var(--color-primary)]">
               {product.price}
             </span>

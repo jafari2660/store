@@ -256,7 +256,7 @@ export async function POST(request) {
 
     const normalizedFileType = fileType.toUpperCase();
 
-    const imageDir = join(process.cwd(), "public/uploadImage");
+   const imageDir = join(process.cwd(), "public/image/product");
 
     await mkdir(imageDir, { recursive: true });
 
@@ -278,7 +278,7 @@ export async function POST(request) {
         price: Number(price),
         stock: Number(stock),
         category,
-        image: `/uploadImage/${imageFileName}`,
+        image: `/image/product/${imageFileName}`,
         file: "",
         fileType: normalizedFileType,
         tags,

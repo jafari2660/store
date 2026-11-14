@@ -1,39 +1,76 @@
+
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
+import { getFeaturedProducts } from "@/app/home/lib/getFeaturedProducts";
+
 
 const FeaturedProducts = () => {
   const carouselRef = useRef(null);
 
-  const products = [
-    {
-      id: 1,
-      name: "کتاب من پیش از تو اثر جوجو مویز",
-      image: "/images/products/1.jpg",
-      price: "220,000 تومان",
-    },
-    {
-      id: 2,
-      name: "کتاب تختخوابت را مرتب کن اثر ویلیام مک‌ریون",
-      image: "/images/products/2.jpg",
-      price: "89,000 تومان",
-    },
-    {
-      id: 3,
-      name: "کتاب ملت عشق اثر الیف شافاک",
-      image: "/images/products/3.jpg",
-      price: "185,000 تومان",
-    },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // دریافت محصولات
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchProducts = async () => {
+      try {
+        const data = await getFeaturedProducts();
+
+
+        if (!Array.isArray(data)) {
+          throw new Error("داده‌های دریافتی معتبر نیستند");
+        }
+
+        if (isMounted) {
+          setProducts(data);
+        }
+      } catch (err) {
+        console.error("Featured Products Error:", err);
+
+        if (isMounted) {
+          setError(err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // راه‌اندازی اسلایدر
+  useEffect(() => {
+    if (loading || products.length === 0) return;
+
     const $ = window.jQuery;
 
-    if (!$ || !$.fn.owlCarousel || !carouselRef.current) return;
+    if (
+      !$ ||
+      !$.fn ||
+      !$.fn.owlCarousel ||
+      !carouselRef.current
+    ) {
+      console.error("Owl Carousel یا jQuery بارگذاری نشده است");
+      return;
+    }
 
     const $carousel = $(carouselRef.current);
+
+    if ($carousel.hasClass("owl-loaded")) {
+      $carousel.trigger("destroy.owl.carousel");
+    }
 
     $carousel.owlCarousel({
       rtl: true,
@@ -41,16 +78,29 @@ const FeaturedProducts = () => {
       margin: 12,
       nav: true,
       dots: false,
-      autoplay: true,
+      autoplay: products.length > 1,
       autoplayTimeout: 4000,
       autoplayHoverPause: true,
       smartSpeed: 700,
       navText: ["‹", "›"],
+
       responsive: {
-        0: { items: 2, margin: 8 },
-        576: { items: 2, margin: 12 },
-        768: { items: 3, margin: 12 },
-        1024: { items: 4, margin: 14 },
+        0: {
+          items: 2,
+          margin: 8,
+        },
+        576: {
+          items: 2,
+          margin: 12,
+        },
+        768: {
+          items: 3,
+          margin: 12,
+        },
+        1024: {
+          items: 4,
+          margin: 14,
+        },
       },
     });
 
@@ -59,20 +109,35 @@ const FeaturedProducts = () => {
         $carousel.trigger("destroy.owl.carousel");
       }
     };
-  }, []);
+  }, [products, loading]);
+
+  if (loading) {
+    return (
+      <div className="py-8 text-center" dir="rtl">
+        در حال بارگذاری محصولات...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center text-red-500" dir="rtl">
+        خطا در بارگذاری محصولات
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return null;
+  }
 
   return (
-    <section
-      className="mb-4 w-full px-3"
-      dir="rtl"
-    >
+    <section className="mb-4 w-full px-3" dir="rtl">
       <div className="container mx-auto">
-
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm sm:p-4">
 
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
-
             <h2 className="border-r-4 border-[var(--color-primary)] pr-3 text-base font-bold text-[var(--color-text)] sm:text-lg">
               پربازدیدترین کتاب‌ها
             </h2>
@@ -83,19 +148,17 @@ const FeaturedProducts = () => {
             >
               مشاهده همه
             </Link>
-
           </div>
 
           {/* Products Carousel */}
           <div className="relative px-1" dir="ltr">
-
             <div
               ref={carouselRef}
               className="owl-carousel owl-theme"
             >
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <div
-                  key={product.id}
+                  key={product._id || product.id || index}
                   className="px-1"
                   dir="rtl"
                 >
@@ -103,7 +166,6 @@ const FeaturedProducts = () => {
                 </div>
               ))}
             </div>
-
           </div>
 
         </div>

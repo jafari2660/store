@@ -13,6 +13,7 @@ import {
   FaBars,
   FaTimes,
   FaFileAlt,
+  FaImages,
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -64,7 +65,7 @@ const Sidebar = () => {
             href="/admin/categories"
           >
             <FaLayerGroup />
-           مدیریت دسته بندی ها
+            مدیریت دسته بندی ها
           </Link>
 
           <Link
@@ -120,6 +121,16 @@ const Sidebar = () => {
             <FaComments />
             مدیریت نظرات
           </Link>
+
+          <Link
+            onClick={closeSidebar}
+            className="flex items-center gap-2"
+            href="/admin/slideshow"
+          >
+            <FaImages />
+            مدیریت اسلایدشو
+          </Link>
+          
         </nav>
 
         <div className="mt-auto flex justify-center pb-4">

@@ -1,4 +1,3 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Product from "@/models/Product";
 import Category from "@/models/Category";
@@ -19,34 +18,25 @@ export async function GET(request, { params }) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return Response.json(
         { message: "شناسه محصول نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const product = await Product.findById(id).lean();
 
     if (!product) {
-      return Response.json(
-        { message: "محصول یافت نشد" },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول یافت نشد" }, { status: 404 });
     }
 
     return Response.json(product, { status: 200 });
-
   } catch (error) {
     console.error("GET product error:", error);
 
-    return Response.json(
-      { message: "خطا در دریافت محصول" },
-      { status: 500 }
-    );
+    return Response.json({ message: "خطا در دریافت محصول" }, { status: 500 });
   }
 }
 
-
 export async function PUT(request, { params }) {
-
   let savedImagePath = null;
   let savedFileDiskPath = null;
   let updateCompleted = false;
@@ -65,7 +55,7 @@ export async function PUT(request, { params }) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return Response.json(
         { message: "شناسه محصول نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,7 +70,7 @@ export async function PUT(request, { params }) {
     if (typeof name !== "string" || !name.trim()) {
       return Response.json(
         { message: "نام محصول الزامی است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +80,7 @@ export async function PUT(request, { params }) {
     ) {
       return Response.json(
         { message: "شناسه دسته‌بندی نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -99,7 +89,7 @@ export async function PUT(request, { params }) {
     if (!categoryExists) {
       return Response.json(
         { message: "دسته‌بندی مورد نظر پیدا نشد" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -115,31 +105,29 @@ export async function PUT(request, { params }) {
       if (!Array.isArray(tags)) {
         throw new Error("برچسب‌ها باید آرایه باشند");
       }
-
     } catch {
       return Response.json(
         { message: "فرمت برچسب نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (
       !tags.every(
         (tag) =>
-          typeof tag === "string" &&
-          mongoose.Types.ObjectId.isValid(tag)
+          typeof tag === "string" && mongoose.Types.ObjectId.isValid(tag),
       )
     ) {
       return Response.json(
         { message: "شناسه برچسب‌ها نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     tags = [...new Set(tags)];
 
     const existingTags = await Tag.find({
-      _id: { $in: tags }
+      _id: { $in: tags },
     })
       .select("_id")
       .lean();
@@ -147,7 +135,7 @@ export async function PUT(request, { params }) {
     if (existingTags.length !== tags.length) {
       return Response.json(
         { message: "یک یا چند برچسب در دیتابیس وجود ندارند" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -169,41 +157,37 @@ export async function PUT(request, { params }) {
     ) {
       return Response.json(
         { message: "قیمت یا موجودی نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (
       discountPrice !== null &&
-      (
-        !Number.isFinite(discountPrice) ||
+      (!Number.isFinite(discountPrice) ||
         discountPrice < 0 ||
-        discountPrice >= price
-      )
+        discountPrice >= price)
     ) {
       return Response.json(
         {
-          message: "قیمت تخفیفی باید غیرمنفی و کمتر از قیمت اصلی باشد"
+          message: "قیمت تخفیفی باید غیرمنفی و کمتر از قیمت اصلی باشد",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const allowedBookTypes = {
       PDF: [".pdf"],
       DOCX: [".docx"],
-      AUDIO: [".mp3", ".m4a"]
+      AUDIO: [".mp3", ".m4a"],
     };
 
     const normalizedFileType =
-      typeof fileType === "string"
-        ? fileType.trim().toUpperCase()
-        : "";
+      typeof fileType === "string" ? fileType.trim().toUpperCase() : "";
 
     if (!Object.hasOwn(allowedBookTypes, normalizedFileType)) {
       return Response.json(
         { message: "نوع فایل کتاب معتبر نیست" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -213,10 +197,7 @@ export async function PUT(request, { params }) {
     const existingProduct = await Product.findById(id);
 
     if (!existingProduct) {
-      return Response.json(
-        { message: "محصول یافت نشد" },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول یافت نشد" }, { status: 404 });
     }
 
     const oldImagePath = existingProduct.image;
@@ -229,23 +210,18 @@ export async function PUT(request, { params }) {
       if (newImage.size > MAX_IMAGE_SIZE) {
         return Response.json(
           { message: "حجم تصویر نباید بیشتر از ۵ مگابایت باشد" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       const imageExtension = extname(newImage.name).toLowerCase();
 
-      const allowedImageExtensions = [
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp"
-      ];
+      const allowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
       if (!allowedImageExtensions.includes(imageExtension)) {
         return Response.json(
           { message: "فرمت تصویر باید JPG، PNG یا WEBP باشد" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -254,38 +230,32 @@ export async function PUT(request, { params }) {
       if (newFile.size > MAX_BOOK_SIZE) {
         return Response.json(
           { message: "حجم فایل کتاب نباید بیشتر از ۵۰ مگابایت باشد" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       const fileExtension = extname(newFile.name).toLowerCase();
 
-      if (
-        !allowedBookTypes[normalizedFileType].includes(fileExtension)
-      ) {
+      if (!allowedBookTypes[normalizedFileType].includes(fileExtension)) {
         return Response.json(
           { message: "نوع یا پسوند فایل کتاب معتبر نیست" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else if (oldFilePath) {
-
       const oldFileExtension = extname(oldFilePath).toLowerCase();
 
-      if (
-        !allowedBookTypes[normalizedFileType].includes(oldFileExtension)
-      ) {
+      if (!allowedBookTypes[normalizedFileType].includes(oldFileExtension)) {
         return Response.json(
           { message: "نوع فایل با فایل فعلی محصول سازگار نیست" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
 
     const updateData = {
       name: name.trim(),
-      description:
-        typeof description === "string" ? description.trim() : "",
+      description: typeof description === "string" ? description.trim() : "",
       category,
       tags,
       fileType: normalizedFileType,
@@ -293,22 +263,15 @@ export async function PUT(request, { params }) {
       saleStatus: formData.get("saleStatus") === "true",
       price,
       stock,
-      discountPrice
+      discountPrice,
     };
 
     let newImagePath = existingProduct.image;
     let newFilePath = existingProduct.file;
 
     if (newImage instanceof File && newImage.size > 0) {
-
       const imageExtension = extname(newImage.name).toLowerCase();
-
-      const imageDir = join(
-        process.cwd(),
-        "public",
-        "uploadImage"
-      );
-
+      const imageDir = join(process.cwd(), "public", "image", "product");
       await mkdir(imageDir, { recursive: true });
 
       const imageFileName = `${randomUUID()}${imageExtension}`;
@@ -317,21 +280,16 @@ export async function PUT(request, { params }) {
 
       await writeFile(
         savedImagePath,
-        Buffer.from(await newImage.arrayBuffer())
+        Buffer.from(await newImage.arrayBuffer()),
       );
 
-      newImagePath = `/uploadImage/${imageFileName}`;
+      newImagePath = `/image/product/${imageFileName}`;
     }
 
     if (newFile instanceof File && newFile.size > 0) {
-
       const fileExtension = extname(newFile.name).toLowerCase();
 
-      const fileDir = join(
-        process.cwd(),
-        "private_uploads",
-        "books"
-      );
+      const fileDir = join(process.cwd(), "private_uploads", "books");
 
       await mkdir(fileDir, { recursive: true });
 
@@ -341,7 +299,7 @@ export async function PUT(request, { params }) {
 
       await writeFile(
         savedFileDiskPath,
-        Buffer.from(await newFile.arrayBuffer())
+        Buffer.from(await newFile.arrayBuffer()),
       );
 
       newFilePath = fileName;
@@ -352,31 +310,26 @@ export async function PUT(request, { params }) {
       {
         ...updateData,
         image: newImagePath,
-        file: newFilePath
+        file: newFilePath,
       },
       {
         new: true,
-        runValidators: true
-      }
+        runValidators: true,
+      },
     );
 
     if (!product) {
-      return Response.json(
-        { message: "محصول یافت نشد" },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول یافت نشد" }, { status: 404 });
     }
 
     updateCompleted = true;
-    if (
-      savedImagePath &&
-      oldImagePath?.startsWith("/uploadImage/")
-    ) {
+    if (savedImagePath && oldImagePath?.startsWith("/image/product/")) {
       const oldImageDiskPath = join(
         process.cwd(),
         "public",
-        "uploadImage",
-        basename(oldImagePath)
+        "image",
+        "product",
+        basename(oldImagePath),
       );
 
       await unlink(oldImageDiskPath).catch((error) => {
@@ -391,7 +344,7 @@ export async function PUT(request, { params }) {
         process.cwd(),
         "private_uploads",
         "books",
-        basename(oldFilePath)
+        basename(oldFilePath),
       );
 
       await unlink(oldFileDiskPath).catch((error) => {
@@ -402,11 +355,8 @@ export async function PUT(request, { params }) {
     }
 
     return Response.json(product, { status: 200 });
-
   } catch (error) {
-
     if (!updateCompleted) {
-
       if (savedImagePath) {
         await unlink(savedImagePath).catch(() => {});
       }
@@ -420,11 +370,10 @@ export async function PUT(request, { params }) {
 
     return Response.json(
       { message: error.message || "خطا در ویرایش محصول" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
 
 export async function DELETE(request, { params }) {
   try {
@@ -441,17 +390,14 @@ export async function DELETE(request, { params }) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return Response.json(
         { message: "شناسه محصول نامعتبر است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const product = await Product.findById(id);
 
     if (!product) {
-      return Response.json(
-        { message: "محصول یافت نشد" },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول یافت نشد" }, { status: 404 });
     }
 
     const productFiles = await ProductFile.find({ product: id });
@@ -462,7 +408,7 @@ export async function DELETE(request, { params }) {
         "private_uploads",
         "products",
         id,
-        file.storedName
+        file.storedName,
       );
 
       await unlink(filePath).catch(() => {});
@@ -470,12 +416,13 @@ export async function DELETE(request, { params }) {
 
     await ProductFile.deleteMany({ product: id });
 
-    if (product.image?.startsWith("/uploadImage/")) {
+    if (product.image?.startsWith("/image/product/")) {
       const imagePath = join(
         process.cwd(),
         "public",
-        "uploadImage",
-        basename(product.image)
+        "image",
+        "product",
+        basename(product.image),
       );
 
       await unlink(imagePath).catch(() => {});
@@ -486,7 +433,7 @@ export async function DELETE(request, { params }) {
         process.cwd(),
         "private_uploads",
         "books",
-        basename(product.file)
+        basename(product.file),
       );
 
       await unlink(filePath).catch(() => {});
@@ -495,13 +442,9 @@ export async function DELETE(request, { params }) {
     await Product.findByIdAndDelete(id);
 
     return new Response(null, { status: 204 });
-
   } catch (error) {
     console.error("DELETE product error:", error);
 
-    return Response.json(
-      { message: "خطا در حذف محصول" },
-      { status: 500 }
-    );
+    return Response.json({ message: "خطا در حذف محصول" }, { status: 500 });
   }
 }

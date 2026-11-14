@@ -3,7 +3,8 @@ import React from "react";
 import SlideShow from "@/components/home/SlideShow";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import AdsSection from "@/components/home/AdsSection";
-import BrandSection from "@/components/home/BrandSection";
+import DiscountedBooks from "@/components/home/DiscountedBooks";
+
 
 const Home = () => {
   return (
@@ -22,7 +23,7 @@ const Home = () => {
       </section>
 
       <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
-        <BrandSection />
+       <DiscountedBooks />
       </section>
     </main>
   );
