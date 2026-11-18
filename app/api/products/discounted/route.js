@@ -22,7 +22,7 @@ export async function GET() {
     console.error("Discounted products error:", error);
 
     return NextResponse.json(
-      { message: "خطا در دریافت کتاب‌های تخفیف‌خورده" },
+      { message: "خطا در دریافت کتاب‌های تخفیف دار خورده" },
       { status: 500 }
     );
   }

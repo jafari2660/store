@@ -110,7 +110,7 @@ const DiscountedBooks = () => {
 
           <div className="mb-5 flex items-center justify-between">
             <h2 className="border-r-4 border-[var(--color-primary)] pr-3 text-base font-bold text-[var(--color-text)] sm:text-lg">
-              کتاب‌های تخفیف‌خورده
+              کتاب‌های تخفیف دار
             </h2>
 
             <Link

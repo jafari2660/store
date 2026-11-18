@@ -64,7 +64,7 @@ export async function PUT(request, { params }) {
     const name = formData.get("name");
     const description = formData.get("description");
     const category = formData.get("category");
-    const fileType = formData.get("fileType");
+    const fileTypesValue = formData.get("fileTypes");
     const tagsValue = formData.get("tags");
 
     if (typeof name !== "string" || !name.trim()) {
@@ -181,15 +181,46 @@ export async function PUT(request, { params }) {
       AUDIO: [".mp3", ".m4a"],
     };
 
-    const normalizedFileType =
-      typeof fileType === "string" ? fileType.trim().toUpperCase() : "";
+    const allowedFileTypes = ["PDF", "DOCX", "AUDIO", "ZIP", "RAR"];
 
-    if (!Object.hasOwn(allowedBookTypes, normalizedFileType)) {
+    let fileTypes = [];
+
+    try {
+      fileTypes = JSON.parse(fileTypesValue || "[]");
+
+      if (!Array.isArray(fileTypes)) {
+        throw new Error();
+      }
+
+      fileTypes = [
+        ...new Set(fileTypes.map((item) => String(item).trim().toUpperCase())),
+      ];
+
+      if (
+        fileTypes.length === 0 ||
+        !fileTypes.every((item) => allowedFileTypes.includes(item))
+      ) {
+        throw new Error();
+      }
+    } catch {
       return Response.json(
-        { message: "نوع فایل کتاب معتبر نیست" },
+        { message: "نوع فایل‌های انتخاب‌شده معتبر نیست." },
         { status: 400 },
       );
     }
+
+    const allowedExtensionsByType = {
+      PDF: [".pdf"],
+      DOCX: [".docx"],
+      AUDIO: [".mp3", ".wav", ".m4a"],
+      ZIP: [".zip"],
+      RAR: [".rar"],
+    };
+
+    const isAllowedByProductTypes = (extension) =>
+      fileTypes.some((type) =>
+        allowedExtensionsByType[type]?.includes(extension.toLowerCase()),
+      );
 
     const newFile = formData.get("file");
     const newImage = formData.get("image");
@@ -236,7 +267,7 @@ export async function PUT(request, { params }) {
 
       const fileExtension = extname(newFile.name).toLowerCase();
 
-      if (!allowedBookTypes[normalizedFileType].includes(fileExtension)) {
+      if (!isAllowedByProductTypes(fileExtension)) {
         return Response.json(
           { message: "نوع یا پسوند فایل کتاب معتبر نیست" },
           { status: 400 },
@@ -245,9 +276,16 @@ export async function PUT(request, { params }) {
     } else if (oldFilePath) {
       const oldFileExtension = extname(oldFilePath).toLowerCase();
 
-      if (!allowedBookTypes[normalizedFileType].includes(oldFileExtension)) {
+      const oldFileIsAllowed = fileTypes.some((type) =>
+        allowedExtensionsByType[type]?.includes(oldFileExtension),
+      );
+
+      if (!oldFileIsAllowed) {
         return Response.json(
-          { message: "نوع فایل با فایل فعلی محصول سازگار نیست" },
+          {
+            message:
+              "نوع فایل فعلی با انواع فایل انتخاب‌شده برای محصول سازگار نیست. ابتدا فایل فعلی را جایگزین کنید.",
+          },
           { status: 400 },
         );
       }
@@ -258,7 +296,7 @@ export async function PUT(request, { params }) {
       description: typeof description === "string" ? description.trim() : "",
       category,
       tags,
-      fileType: normalizedFileType,
+      fileTypes,
       isActive: formData.get("isActive") === "true",
       saleStatus: formData.get("saleStatus") === "true",
       price,
@@ -271,7 +309,7 @@ export async function PUT(request, { params }) {
 
     if (newImage instanceof File && newImage.size > 0) {
       const imageExtension = extname(newImage.name).toLowerCase();
-      const imageDir = join(process.cwd(), "public", "image", "product");
+      const imageDir = join(process.cwd(), "public", "images", "product");
       await mkdir(imageDir, { recursive: true });
 
       const imageFileName = `${randomUUID()}${imageExtension}`;
@@ -283,7 +321,7 @@ export async function PUT(request, { params }) {
         Buffer.from(await newImage.arrayBuffer()),
       );
 
-      newImagePath = `/image/product/${imageFileName}`;
+      newImagePath = `/images/product/${imageFileName}`;
     }
 
     if (newFile instanceof File && newFile.size > 0) {
@@ -323,11 +361,12 @@ export async function PUT(request, { params }) {
     }
 
     updateCompleted = true;
-    if (savedImagePath && oldImagePath?.startsWith("/image/product/")) {
+
+    if (savedImagePath && oldImagePath) {
       const oldImageDiskPath = join(
         process.cwd(),
         "public",
-        "image",
+        oldImagePath.startsWith("/images/product/") ? "images" : "image",
         "product",
         basename(oldImagePath),
       );
@@ -416,11 +455,18 @@ export async function DELETE(request, { params }) {
 
     await ProductFile.deleteMany({ product: id });
 
-    if (product.image?.startsWith("/image/product/")) {
+    if (
+      product.image?.startsWith("/image/product/") ||
+      product.image?.startsWith("/images/product/")
+    ) {
+      const imageFolder = product.image.startsWith("/images/product/")
+        ? "images"
+        : "image";
+
       const imagePath = join(
         process.cwd(),
         "public",
-        "image",
+        imageFolder,
         "product",
         basename(product.image),
       );

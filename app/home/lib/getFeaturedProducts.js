@@ -1,8 +1,9 @@
+
 export async function getFeaturedProducts() {
   const res = await fetch(
     `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/products/featured`,
     {
-      cache: "force-cache",
+      cache: "no-store",
     }
   );
 

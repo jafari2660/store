@@ -1,4 +1,3 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Product from "@/models/Product";
 import ProductFile from "@/models/ProductFile";
@@ -28,7 +27,7 @@ export async function GET(request, { params }) {
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return Response.json(
         { message: "شناسه محصول نامعتبر است." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,17 +36,14 @@ export async function GET(request, { params }) {
     const product = await Product.findById(productId);
 
     if (!product) {
-      return Response.json(
-        { message: "محصول پیدا نشد." },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول پیدا نشد." }, { status: 404 });
     }
 
     const files = await ProductFile.find({
       product: productId,
     })
       .select(
-        "_id title author speaker originalName extension size order createdAt"
+        "_id title author translator speaker originalName extension size order createdAt",
       )
       .sort({ order: 1 });
 
@@ -57,7 +53,7 @@ export async function GET(request, { params }) {
 
     return Response.json(
       { message: "خطا در دریافت فایل‌ها." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -74,7 +70,7 @@ export async function POST(request, { params }) {
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return Response.json(
         { message: "شناسه محصول نامعتبر است." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,38 +79,36 @@ export async function POST(request, { params }) {
     const product = await Product.findById(productId);
 
     if (!product) {
+      return Response.json({ message: "محصول پیدا نشد." }, { status: 404 });
+    }
+
+    const productFileTypes = Array.isArray(product.fileTypes)
+      ? product.fileTypes
+      : [];
+
+    if (productFileTypes.length === 0) {
       return Response.json(
-        { message: "محصول پیدا نشد." },
-        { status: 404 }
+        { message: "برای این محصول نوع فایل مجاز تعریف نشده است." },
+        { status: 400 },
       );
     }
 
-    const productType = String(product.fileType || "").toUpperCase();
-
-    const allowedExtensions =
-      allowedExtensionsByType[productType];
-
-    if (!allowedExtensions) {
-      return Response.json(
-        {
-          message:
-            "نوع محصول معتبر نیست یا فرمت مجازی برای آن تعریف نشده است.",
-        },
-        { status: 400 }
-      );
-    }
+    const allowedExtensions = productFileTypes.flatMap(
+      (type) => allowedExtensionsByType[type] || [],
+    );
 
     const formData = await request.formData();
 
     const file = formData.get("file");
     const title = formData.get("title");
     const author = formData.get("author");
+    const translator = formData.get("translator");
     const speaker = formData.get("speaker");
 
     if (!file || typeof file === "string" || file.size === 0) {
       return Response.json(
         { message: "فایلی انتخاب نشده است." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,50 +121,63 @@ export async function POST(request, { params }) {
         {
           message: "نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (productType === "AUDIO") {
+    if (translator !== null && typeof translator !== "string") {
+      return Response.json(
+        { message: "نام مترجم معتبر نیست." },
+        { status: 400 },
+      );
+    }
+
+    const normalizedTranslator =
+      typeof translator === "string" ? translator.trim() : "";
+
+    if (normalizedTranslator.length > 100) {
+      return Response.json(
+        { message: "نام مترجم نباید بیشتر از ۱۰۰ کاراکتر باشد." },
+        { status: 400 },
+      );
+    }
+
+    const extension = extname(file.name).slice(1).toLowerCase();
+
+    const isAudioFile = ["mp3", "wav", "m4a"].includes(extension);
+
+    if (isAudioFile) {
       if (
         typeof speaker !== "string" ||
         speaker.trim().length < 2 ||
         speaker.trim().length > 100
       ) {
         return Response.json(
-          {
-            message: "نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد.",
-          },
-          { status: 400 }
+          { message: "نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد." },
+          { status: 400 },
         );
       }
     }
-
-    const extension = extname(file.name)
-      .slice(1)
-      .toLowerCase();
 
     if (!allowedExtensions.includes(extension)) {
       return Response.json(
         {
           message: `برای این محصول فقط فرمت ${allowedExtensions.join("، ")} مجاز است.`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (file.size > 100 * 1024 * 1024) {
       return Response.json(
         { message: "حداکثر حجم فایل ۱۰۰ مگابایت است." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const fileHash = createHash("sha256")
-      .update(buffer)
-      .digest("hex");
+    const fileHash = createHash("sha256").update(buffer).digest("hex");
 
     const duplicateFile = await ProductFile.findOne({
       product: productId,
@@ -182,7 +189,7 @@ export async function POST(request, { params }) {
         {
           message: "این فایل قبلاً برای این محصول آپلود شده است.",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -192,7 +199,7 @@ export async function POST(request, { params }) {
       process.cwd(),
       "private_uploads",
       "products",
-      productId
+      productId,
     );
 
     savedPath = join(uploadDir, storedName);
@@ -209,17 +216,14 @@ export async function POST(request, { params }) {
       product: productId,
 
       title:
-        typeof title === "string" && title.trim()
-          ? title.trim()
-          : file.name,
+        typeof title === "string" && title.trim() ? title.trim() : file.name,
 
       author: author.trim(),
 
-      speaker:
-        productType === "AUDIO"
-          ? speaker.trim()
-          : "",
+      translator: normalizedTranslator,
 
+      speaker: isAudioFile ? speaker.trim() : "",
+      
       originalName: file.name,
       storedName,
       extension,
@@ -234,13 +238,14 @@ export async function POST(request, { params }) {
         _id: newFile._id,
         title: newFile.title,
         author: newFile.author,
+        translator: newFile.translator,
         speaker: newFile.speaker,
         originalName: newFile.originalName,
         extension: newFile.extension,
         size: newFile.size,
         order: newFile.order,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(error);
@@ -249,9 +254,6 @@ export async function POST(request, { params }) {
       await unlink(savedPath).catch(() => {});
     }
 
-    return Response.json(
-      { message: "خطا در ذخیره فایل." },
-      { status: 500 }
-    );
+    return Response.json({ message: "خطا در ذخیره فایل." }, { status: 500 });
   }
 }

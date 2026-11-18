@@ -1,4 +1,3 @@
-
 import connectToDatabase from "@/app/lib/db";
 import Product from "@/models/Product";
 import ProductFile from "@/models/ProductFile";
@@ -20,10 +19,7 @@ export async function PATCH(request, { params }) {
       !mongoose.Types.ObjectId.isValid(productId) ||
       !mongoose.Types.ObjectId.isValid(fileId)
     ) {
-      return Response.json(
-        { message: "شناسه نامعتبر است." },
-        { status: 400 }
-      );
+      return Response.json({ message: "شناسه نامعتبر است." }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -31,10 +27,7 @@ export async function PATCH(request, { params }) {
     const product = await Product.findById(productId);
 
     if (!product) {
-      return Response.json(
-        { message: "محصول پیدا نشد." },
-        { status: 404 }
-      );
+      return Response.json({ message: "محصول پیدا نشد." }, { status: 404 });
     }
 
     const file = await ProductFile.findOne({
@@ -43,15 +36,13 @@ export async function PATCH(request, { params }) {
     });
 
     if (!file) {
-      return Response.json(
-        { message: "فایل پیدا نشد." },
-        { status: 404 }
-      );
+      return Response.json({ message: "فایل پیدا نشد." }, { status: 404 });
     }
 
     const body = await request.json();
-    const { author, speaker } = body;
+    const { author, speaker, translator } = body;
 
+    // اعتبارسنجی نویسنده
     if (
       typeof author !== "string" ||
       author.trim().length < 2 ||
@@ -61,34 +52,63 @@ export async function PATCH(request, { params }) {
         {
           message: "نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const productType = String(
-      product.fileType || ""
-    ).toUpperCase();
+    // اعتبارسنجی مترجم
+    if (translator !== undefined && typeof translator !== "string") {
+      return Response.json(
+        { message: "نام مترجم معتبر نیست." },
+        { status: 400 },
+      );
+    }
 
-    let updatedSpeaker = "";
+    const updatedTranslator =
+      typeof translator === "string" ? translator.trim() : "";
 
-    if (productType === "AUDIO") {
-      if (
-        typeof speaker !== "string" ||
-        speaker.trim().length < 2 ||
-        speaker.trim().length > 100
-      ) {
+    if (updatedTranslator.length > 100) {
+      return Response.json(
+        {
+          message: "نام مترجم نباید بیشتر از ۱۰۰ کاراکتر باشد.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const isAudioFile = ["mp3", "wav", "m4a"].includes(
+      String(file.extension).toLowerCase(),
+    );
+
+    let updatedSpeaker = file.speaker || "";
+
+    if (isAudioFile) {
+      if (speaker !== undefined && typeof speaker !== "string") {
+        return Response.json(
+          { message: "نام گوینده معتبر نیست." },
+          { status: 400 },
+        );
+      }
+
+      if (speaker !== undefined) {
+        updatedSpeaker = speaker.trim();
+      }
+
+      if (updatedSpeaker.length < 2 || updatedSpeaker.length > 100) {
         return Response.json(
           {
             message: "نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
-
-      updatedSpeaker = speaker.trim();
+    } else {
+      updatedSpeaker = "";
     }
 
+    // ذخیره اطلاعات
     file.author = author.trim();
+    file.translator = updatedTranslator;
     file.speaker = updatedSpeaker;
 
     await file.save();
@@ -97,6 +117,7 @@ export async function PATCH(request, { params }) {
       _id: file._id,
       title: file.title,
       author: file.author,
+      translator: file.translator,
       speaker: file.speaker,
       extension: file.extension,
       size: file.size,
@@ -104,19 +125,17 @@ export async function PATCH(request, { params }) {
 
     return Response.json({
       message: "اطلاعات فایل با موفقیت ویرایش شد.",
-
       author: file.author,
+      translator: file.translator,
       speaker: file.speaker,
-
       file: updatedFile,
     });
-
   } catch (error) {
     console.error(error);
 
     return Response.json(
       { message: "خطا در ویرایش اطلاعات فایل." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -132,10 +151,7 @@ export async function DELETE(request, { params }) {
       !mongoose.Types.ObjectId.isValid(productId) ||
       !mongoose.Types.ObjectId.isValid(fileId)
     ) {
-      return Response.json(
-        { message: "شناسه نامعتبر است." },
-        { status: 400 }
-      );
+      return Response.json({ message: "شناسه نامعتبر است." }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -146,10 +162,7 @@ export async function DELETE(request, { params }) {
     });
 
     if (!file) {
-      return Response.json(
-        { message: "فایل پیدا نشد." },
-        { status: 404 }
-      );
+      return Response.json({ message: "فایل پیدا نشد." }, { status: 404 });
     }
 
     const path = join(
@@ -157,7 +170,7 @@ export async function DELETE(request, { params }) {
       "private_uploads",
       "products",
       productId,
-      file.storedName
+      file.storedName,
     );
 
     await unlink(path).catch((error) => {
@@ -171,13 +184,9 @@ export async function DELETE(request, { params }) {
     return Response.json({
       message: "فایل حذف شد.",
     });
-
   } catch (error) {
     console.error(error);
 
-    return Response.json(
-      { message: "خطا در حذف فایل." },
-      { status: 500 }
-    );
+    return Response.json({ message: "خطا در حذف فایل." }, { status: 500 });
   }
 }

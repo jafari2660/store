@@ -10,7 +10,6 @@ const ProductCard = ({ product }) => {
       dir="rtl"
       className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-primary-light)] hover:shadow-lg"
     >
-      {/* Action Buttons */}
       <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
         <button
           type="button"
@@ -29,15 +28,15 @@ const ProductCard = ({ product }) => {
         </button>
       </div>
 
-      {/* Product Link */}
       <Link
-        href={product.href || "#"}
+        href={`products/${product._id}`}
         className="flex flex-1 flex-col no-underline"
       >
-        {/* Book Image */}
         <div className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-lg p-3 sm:h-[210px]">
           <Image
-            src={product.image?.replace("/uploadImage/", "/images/product/")}
+            src={product.image
+              ?.replace("/image/product/", "/images/product/")
+              .replace("/uploadImage/", "/images/product/")}
             alt={product?.name || "محصول"}
             width={300}
             height={400}
@@ -46,12 +45,10 @@ const ProductCard = ({ product }) => {
           />
         </div>
 
-        {/* Product Name */}
         <h3 className="mt-3 min-h-12 line-clamp-2 text-sm font-medium leading-6 text-[var(--color-text)] transition-colors group-hover:text-[var(--color-primary)]">
           {product.name}
         </h3>
 
-        {/* Price */}
         <div className="mt-auto pt-4">
           {product.oldPrice && product.discount && (
             <div className="mb-2 flex items-center justify-between gap-2">

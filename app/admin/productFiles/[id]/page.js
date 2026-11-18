@@ -1,10 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-
 import Sidebar from "@/components/ui/Sidebar";
 import Header from "@/components/ui/Header";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -16,12 +14,14 @@ export default function ProductFiles() {
   const [product, setProduct] = useState(null);
   const [files, setFiles] = useState([]);
 
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [author, setAuthor] = useState("");
+  const [translator, setTranslator] = useState("");
   const [speaker, setSpeaker] = useState("");
 
   const [editingFileId, setEditingFileId] = useState(null);
   const [editAuthor, setEditAuthor] = useState("");
+  const [editTranslator, setEditTranslator] = useState("");
   const [editSpeaker, setEditSpeaker] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -37,15 +37,11 @@ export default function ProductFiles() {
       const filesData = await filesRes.json();
 
       if (!productRes.ok) {
-        throw new Error(
-          productData.message || "خطا در دریافت محصول"
-        );
+        throw new Error(productData.message || "خطا در دریافت محصول");
       }
 
       if (!filesRes.ok) {
-        throw new Error(
-          filesData.message || "خطا در دریافت فایل‌ها"
-        );
+        throw new Error(filesData.message || "خطا در دریافت فایل‌ها");
       }
 
       setProduct(productData);
@@ -66,70 +62,85 @@ export default function ProductFiles() {
 
     setError("");
 
-    if (!selectedFile) {
-      setError("لطفاً یک فایل انتخاب کنید.");
+    if (!selectedFiles.length) {
+      setError("لطفاً حداقل یک فایل انتخاب کنید.");
       return;
     }
+
+    if (author.trim().length < 2 || author.trim().length > 100) {
+      setError("نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد.");
+      return;
+    }
+
+    if (translator.trim().length > 100) {
+      setError("نام مترجم نباید بیشتر از ۱۰۰ کاراکتر باشد.");
+      return;
+    }
+
+    const hasAudioFile = selectedFiles.some((file) =>
+      /\.(mp3|wav|m4a)$/i.test(file.name),
+    );
 
     if (
-      author.trim().length < 2 ||
-      author.trim().length > 100
+      hasAudioFile &&
+      (speaker.trim().length < 2 || speaker.trim().length > 100)
     ) {
-      setError(
-        "نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد."
-      );
+      setError("نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد.");
       return;
     }
-
-    if (
-      product?.fileType === "AUDIO" &&
-      (
-        speaker.trim().length < 2 ||
-        speaker.trim().length > 100
-      )
-    ) {
-      setError(
-        "نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد."
-      );
-      return;
-    }
-
     setSaving(true);
 
+    const failedFiles = [];
+
     try {
-      const formData = new FormData();
+      for (const file of selectedFiles) {
+        try {
+          const formData = new FormData();
 
-      formData.append("file", selectedFile);
-      formData.append("title", selectedFile.name);
-      formData.append("author", author.trim());
+          formData.append("file", file);
+          formData.append("title", file.name);
+          formData.append("author", author.trim());
+          formData.append("translator", translator.trim());
 
-      if (product?.fileType === "AUDIO") {
-        formData.append("speaker", speaker.trim());
-      }
+          if (/\.(mp3|wav|m4a)$/i.test(file.name)) {
+            formData.append("speaker", speaker.trim());
+          }
 
-      const response = await fetch(
-        `/api/productFiles/${id}`,
-        {
-          method: "POST",
-          body: formData,
+          const response = await fetch(`/api/productFiles/${id}`, {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "خطا در آپلود");
+          }
+        } catch (error) {
+          failedFiles.push({
+            name: file.name,
+            message: error.message,
+          });
         }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "خطا در ذخیره فایل"
-        );
       }
 
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setAuthor("");
+      setTranslator("");
       setSpeaker("");
 
       e.target.reset();
 
       await getData();
+
+      if (failedFiles.length > 0) {
+        setError(
+          "تعدادی از فایل‌ها آپلود نشدند:\n" +
+            failedFiles
+              .map((file) => `${file.name}: ${file.message}`)
+              .join("\n"),
+        );
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -140,6 +151,7 @@ export default function ProductFiles() {
   function startEditing(file) {
     setEditingFileId(file._id);
     setEditAuthor(file.author || "");
+    setEditTranslator(file.translator || "");
     setEditSpeaker(file.speaker || "");
     setError("");
   }
@@ -147,6 +159,7 @@ export default function ProductFiles() {
   function cancelEditing() {
     setEditingFileId(null);
     setEditAuthor("");
+    setEditTranslator("");
     setEditSpeaker("");
     setError("");
   }
@@ -154,55 +167,35 @@ export default function ProductFiles() {
   async function handleUpdateFile(fileId) {
     setError("");
 
-    if (
-      editAuthor.trim().length < 2 ||
-      editAuthor.trim().length > 100
-    ) {
-      setError(
-        "نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد."
-      );
+    if (editAuthor.trim().length < 2 || editAuthor.trim().length > 100) {
+      setError("نام نویسنده باید بین ۲ تا ۱۰۰ کاراکتر باشد.");
       return;
     }
 
-    if (
-      product?.fileType === "AUDIO" &&
-      (
-        editSpeaker.trim().length < 2 ||
-        editSpeaker.trim().length > 100
-      )
-    ) {
-      setError(
-        "نام گوینده باید بین ۲ تا ۱۰۰ کاراکتر باشد."
-      );
+    if (editTranslator.trim().length > 100) {
+      setError("نام مترجم نباید بیشتر از ۱۰۰ کاراکتر باشد.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const response = await fetch(
-        `/api/productFiles/${id}/${fileId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            author: editAuthor.trim(),
-            speaker:
-              product?.fileType === "AUDIO"
-                ? editSpeaker.trim()
-                : "",
-          }),
-        }
-      );
+      const response = await fetch(`/api/productFiles/${id}/${fileId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          author: editAuthor.trim(),
+          translator: editTranslator.trim(),
+          speaker: editSpeaker.trim(),
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "خطا در ویرایش فایل"
-        );
+        throw new Error(data.message || "خطا در ویرایش فایل");
       }
 
       setFiles((previousFiles) =>
@@ -211,10 +204,11 @@ export default function ProductFiles() {
             ? {
                 ...file,
                 author: data.author,
+                translator: data.translator,
                 speaker: data.speaker,
               }
-            : file
-        )
+            : file,
+        ),
       );
 
       cancelEditing();
@@ -225,35 +219,27 @@ export default function ProductFiles() {
     }
   }
 
+  // حذف فایل
   async function handleDelete(fileId) {
-    const confirmed = confirm(
-      "آیا از حذف این فایل مطمئن هستید؟"
-    );
+    const confirmed = confirm("آیا از حذف این فایل مطمئن هستید؟");
 
     if (!confirmed) return;
 
     setError("");
 
     try {
-      const response = await fetch(
-        `/api/productFiles/${id}/${fileId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/productFiles/${id}/${fileId}`, {
+        method: "DELETE",
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "خطا در حذف فایل"
-        );
+        throw new Error(data.message || "خطا در حذف فایل");
       }
 
       setFiles((previousFiles) =>
-        previousFiles.filter(
-          (file) => file._id !== fileId
-        )
+        previousFiles.filter((file) => file._id !== fileId),
       );
 
       if (editingFileId === fileId) {
@@ -270,7 +256,6 @@ export default function ProductFiles() {
     <AuthWrapper>
       <div className="min-h-screen w-full min-w-0 overflow-x-clip">
         <div className="flex min-h-screen w-full min-w-0 gap-4">
-
           {/* سایدبار */}
           <div className="hidden shrink-0 md:block md:w-64">
             <Sidebar />
@@ -280,12 +265,9 @@ export default function ProductFiles() {
             <Header />
 
             <main className="content min-h-screen min-w-0 p-3 sm:p-4">
-
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-
                 {/* عنوان صفحه */}
                 <div className="border-b border-[var(--color-border)] p-4">
-
                   <h2 className="font-bold text-[var(--color-text)]">
                     مدیریت فایل‌های محصول
                   </h2>
@@ -295,7 +277,7 @@ export default function ProductFiles() {
                   </p>
 
                   <p className="mt-1 text-sm text-[var(--color-muted)]">
-                    نوع فایل: {product?.fileType}
+                    نوع فایل های مجاز: {product?.fileTypes?.join("، ")}
                   </p>
 
                   <Link
@@ -304,15 +286,11 @@ export default function ProductFiles() {
                   >
                     بازگشت به محصولات
                   </Link>
-
                 </div>
 
                 {/* فرم آپلود */}
                 <div className="border-b border-[var(--color-border)] p-4">
-
-                  <h3 className="mb-4 font-bold">
-                    افزودن فایل جدید
-                  </h3>
+                  <h3 className="mb-4 font-bold">افزودن فایل جدید</h3>
 
                   {error && (
                     <p className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -320,11 +298,7 @@ export default function ProductFiles() {
                     </p>
                   )}
 
-                  <form
-                    onSubmit={handleUpload}
-                    className="space-y-3"
-                  >
-
+                  <form onSubmit={handleUpload} className="space-y-3">
                     {/* نویسنده */}
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
@@ -334,9 +308,7 @@ export default function ProductFiles() {
                       <input
                         type="text"
                         value={author}
-                        onChange={(e) =>
-                          setAuthor(e.target.value)
-                        }
+                        onChange={(e) => setAuthor(e.target.value)}
                         placeholder="نام نویسنده این فایل"
                         required
                         minLength={2}
@@ -345,8 +317,26 @@ export default function ProductFiles() {
                       />
                     </div>
 
+                    {/* مترجم */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+                        نام مترجم
+                      </label>
+
+                      <input
+                        type="text"
+                        value={translator}
+                        onChange={(e) => setTranslator(e.target.value)}
+                        placeholder="نام مترجم این فایل"
+                        maxLength={100}
+                        className="input-field w-full"
+                      />
+                    </div>
+
                     {/* گوینده فقط برای فایل صوتی */}
-                    {product?.fileType === "AUDIO" && (
+                    {selectedFiles.some((file) =>
+                      /\.(mp3|wav|m4a)$/i.test(file.name),
+                    ) && (
                       <div>
                         <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
                           نام گوینده
@@ -355,9 +345,7 @@ export default function ProductFiles() {
                         <input
                           type="text"
                           value={speaker}
-                          onChange={(e) =>
-                            setSpeaker(e.target.value)
-                          }
+                          onChange={(e) => setSpeaker(e.target.value)}
                           placeholder="نام گوینده این فایل صوتی"
                           required
                           minLength={2}
@@ -375,58 +363,64 @@ export default function ProductFiles() {
 
                       <input
                         type="file"
-                        accept={
-                          product?.fileType === "PDF"
-                            ? ".pdf"
-                            : product?.fileType === "DOCX"
-                              ? ".docx"
-                              : product?.fileType === "AUDIO"
-                                ? ".mp3,.wav,.m4a"
-                                : product?.fileType === "ZIP"
-                                  ? ".zip"
-                                  : product?.fileType === "RAR"
-                                    ? ".rar"
-                                    : ""
-                        }
+                        multiple
+                        accept={(product?.fileTypes || [])
+                          .flatMap((type) => {
+                            const extensions = {
+                              PDF: [".pdf"],
+                              DOCX: [".docx"],
+                              AUDIO: [".mp3", ".wav", ".m4a"],
+                              ZIP: [".zip"],
+                              RAR: [".rar"],
+                            };
+
+                            return extensions[type] || [];
+                          })
+                          .join(",")}
                         onChange={(e) =>
-                          setSelectedFile(
-                            e.target.files?.[0] || null
-                          )
+                          setSelectedFiles(Array.from(e.target.files || []))
                         }
                         className="input-field w-full"
                       />
                     </div>
 
-                    {selectedFile && (
-                      <p className="text-xs text-[var(--color-muted)]">
-                        فایل انتخاب‌شده: {selectedFile.name}
-                      </p>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-sm font-medium">
+                          تعداد فایل‌های انتخاب‌شده: {selectedFiles.length}
+                        </p>
+
+                        {selectedFiles.map((file, index) => (
+                          <div
+                            key={`${file.name}-${index}`}
+                            className="text-xs text-[var(--color-muted)]"
+                          >
+                            {index + 1}. {file.name}
+                          </div>
+                        ))}
+                      </div>
                     )}
 
                     <button
                       type="submit"
                       disabled={
                         saving ||
-                        !selectedFile ||
-                        !author.trim() ||
-                        (
-                          product?.fileType === "AUDIO" &&
-                          !speaker.trim()
-                        )
+                        selectedFiles.length === 0 ||
+                        author.trim().length < 2 ||
+                        (selectedFiles.some((file) =>
+                          /\.(mp3|wav|m4a)$/i.test(file.name),
+                        ) &&
+                          speaker.trim().length < 2)
                       }
                       className="btn-custom-add mt-3 disabled:opacity-50"
                     >
-                      {saving
-                        ? "در حال ذخیره..."
-                        : "آپلود و ذخیره فایل"}
+                      {saving ? "در حال ذخیره..." : "آپلود و ذخیره فایل"}
                     </button>
-
                   </form>
                 </div>
 
                 {/* جدول فایل‌ها */}
                 <div className="p-4">
-
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="font-bold text-[var(--color-text)]">
                       فایل‌های محصول
@@ -449,36 +443,22 @@ export default function ProductFiles() {
                     </p>
                   ) : (
                     <div className="w-full overflow-x-auto">
-
-                      <table className="w-full min-w-[850px] text-sm text-right">
-
+                      <table className="w-full min-w-[950px] text-sm text-right">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] text-[var(--color-muted)]">
+                            <th className="p-3 font-medium">عنوان فایل</th>
 
-                            <th className="p-3 font-medium">
-                              عنوان فایل
-                            </th>
+                            <th className="p-3 font-medium">نویسنده</th>
 
-                            <th className="p-3 font-medium">
-                              نویسنده
-                            </th>
+                            <th className="p-3 font-medium">مترجم</th>
 
-                            <th className="p-3 font-medium">
-                              گوینده
-                            </th>
+                            <th className="p-3 font-medium">گوینده</th>
 
-                            <th className="p-3 font-medium">
-                              فرمت
-                            </th>
+                            <th className="p-3 font-medium">فرمت</th>
 
-                            <th className="p-3 font-medium">
-                              حجم
-                            </th>
+                            <th className="p-3 font-medium">حجم</th>
 
-                            <th className="p-3 font-medium">
-                              عملیات
-                            </th>
-
+                            <th className="p-3 font-medium">عملیات</th>
                           </tr>
                         </thead>
 
@@ -488,7 +468,6 @@ export default function ProductFiles() {
                               key={file._id}
                               className="border-b border-[var(--color-border)] last:border-0"
                             >
-
                               {editingFileId === file._id ? (
                                 <>
                                   {/* عنوان فایل */}
@@ -510,9 +489,25 @@ export default function ProductFiles() {
                                     />
                                   </td>
 
+                                  {/* ویرایش مترجم */}
+                                  <td className="p-3">
+                                    <input
+                                      type="text"
+                                      value={editTranslator}
+                                      onChange={(e) =>
+                                        setEditTranslator(e.target.value)
+                                      }
+                                      maxLength={100}
+                                      className="input-field w-40"
+                                      placeholder="نام مترجم"
+                                    />
+                                  </td>
+
                                   {/* ویرایش گوینده */}
                                   <td className="p-3">
-                                    {product?.fileType === "AUDIO" ? (
+                                    {["mp3", "wav", "m4a"].includes(
+                                      String(file.extension).toLowerCase(),
+                                    ) ? (
                                       <input
                                         type="text"
                                         value={editSpeaker}
@@ -533,17 +528,12 @@ export default function ProductFiles() {
                                   </td>
 
                                   <td className="p-3 whitespace-nowrap">
-                                    {(
-                                      file.size /
-                                      (1024 * 1024)
-                                    ).toFixed(2)}{" "}
-                                    MB
+                                    {(file.size / (1024 * 1024)).toFixed(2)} MB
                                   </td>
 
                                   {/* دکمه‌های ویرایش */}
                                   <td className="p-3">
                                     <div className="flex flex-wrap gap-2">
-
                                       <button
                                         type="button"
                                         onClick={() =>
@@ -552,9 +542,7 @@ export default function ProductFiles() {
                                         disabled={saving}
                                         className="btn-custom-add whitespace-nowrap disabled:opacity-50"
                                       >
-                                        {saving
-                                          ? "در حال ذخیره..."
-                                          : "ذخیره"}
+                                        {saving ? "در حال ذخیره..." : "ذخیره"}
                                       </button>
 
                                       <button
@@ -565,7 +553,6 @@ export default function ProductFiles() {
                                       >
                                         انصراف
                                       </button>
-
                                     </div>
                                   </td>
                                 </>
@@ -575,12 +562,16 @@ export default function ProductFiles() {
                                     {file.title}
                                   </td>
 
+                                  <td className="p-3">{file.author || "—"}</td>
+
                                   <td className="p-3">
-                                    {file.author || "—"}
+                                    {file.translator || "—"}
                                   </td>
 
                                   <td className="p-3">
-                                    {product?.fileType === "AUDIO"
+                                    {["mp3", "wav", "m4a"].includes(
+                                      String(file.extension).toLowerCase(),
+                                    )
                                       ? file.speaker || "—"
                                       : "—"}
                                   </td>
@@ -590,22 +581,15 @@ export default function ProductFiles() {
                                   </td>
 
                                   <td className="p-3 whitespace-nowrap">
-                                    {(
-                                      file.size /
-                                      (1024 * 1024)
-                                    ).toFixed(2)}{" "}
-                                    MB
+                                    {(file.size / (1024 * 1024)).toFixed(2)} MB
                                   </td>
 
                                   {/* عملیات */}
                                   <td className="p-3">
                                     <div className="flex flex-wrap gap-2">
-
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          startEditing(file)
-                                        }
+                                        onClick={() => startEditing(file)}
                                         className="btn-custom-add !min-w-[76px] !w-[76px] !h-8 !px-2 !py-1 inline-flex items-center justify-center text-xs leading-none whitespace-nowrap"
                                       >
                                         ویرایش
@@ -613,32 +597,23 @@ export default function ProductFiles() {
 
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          handleDelete(file._id)
-                                        }
+                                        onClick={() => handleDelete(file._id)}
                                         className="btn-custom-delete !min-w-[76px] !w-[76px] !h-8 !px-2 !py-1 inline-flex items-center justify-center text-xs leading-none whitespace-nowrap"
                                       >
                                         حذف فایل
                                       </button>
-
                                     </div>
                                   </td>
                                 </>
                               )}
-
                             </tr>
                           ))}
                         </tbody>
-
                       </table>
-
                     </div>
                   )}
-
                 </div>
-
               </div>
-
             </main>
           </div>
 
@@ -646,7 +621,6 @@ export default function ProductFiles() {
           <div className="md:hidden">
             <Sidebar />
           </div>
-
         </div>
       </div>
     </AuthWrapper>

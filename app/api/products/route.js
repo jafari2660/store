@@ -52,7 +52,7 @@ export async function POST(request) {
     const name = data.get("name");
     const description = data.get("description");
     const category = data.get("category");
-    const fileType = data.get("fileType");
+    const fileTypesValue = data.get("fileTypes");
     const isActiveValue = data.get("isActive");
     const saleStatusValue = data.get("saleStatus");
 
@@ -157,10 +157,10 @@ export async function POST(request) {
       );
     }
 
-    if (description.length < 3 || description.length > 200) {
+    if (description.length < 3 || description.length > 400) {
       return new Response(
         JSON.stringify({
-          message: "توضیحات باید بین ۳ تا ۲۰۰ کاراکتر باشد",
+          message: "توضیحات باید بین ۳ تا ۴۰۰ کاراکتر باشد",
         }),
         { status: 400 },
       );
@@ -196,13 +196,33 @@ export async function POST(request) {
       );
     }
 
-    if (!fileType || typeof fileType !== "string") {
-      return new Response(
-        JSON.stringify({ message: "نوع فایل الزامی می‌باشد" }),
+    const allowedFileTypes = ["PDF", "DOCX", "AUDIO", "ZIP", "RAR"];
+
+    let fileTypes = [];
+
+    try {
+      fileTypes = JSON.parse(fileTypesValue || "[]");
+
+      if (!Array.isArray(fileTypes)) {
+        throw new Error("نوع فایل‌ها باید آرایه باشند");
+      }
+
+      fileTypes = [
+        ...new Set(fileTypes.map((item) => String(item).trim().toUpperCase())),
+      ];
+
+      if (
+        fileTypes.length === 0 ||
+        !fileTypes.every((item) => allowedFileTypes.includes(item))
+      ) {
+        throw new Error("نوع فایل انتخاب‌شده معتبر نیست");
+      }
+    } catch {
+      return Response.json(
+        { message: "حداقل یک نوع فایل معتبر انتخاب کنید." },
         { status: 400 },
       );
     }
-
     if (
       !Number.isFinite(price) ||
       price < 0 ||
@@ -254,9 +274,8 @@ export async function POST(request) {
       );
     }
 
-    const normalizedFileType = fileType.toUpperCase();
-
-   const imageDir = join(process.cwd(), "public/image/product");
+    
+    const imageDir = join(process.cwd(), "public", "images", "product");
 
     await mkdir(imageDir, { recursive: true });
 
@@ -278,9 +297,9 @@ export async function POST(request) {
         price: Number(price),
         stock: Number(stock),
         category,
-        image: `/image/product/${imageFileName}`,
+        image: `/images/product/${imageFileName}`,
         file: "",
-        fileType: normalizedFileType,
+        fileTypes,
         tags,
         isActive,
         saleStatus,
@@ -297,11 +316,31 @@ export async function POST(request) {
 
       throw error;
     }
-  } catch (error) {
-    console.error("PRODUCT CREATE ERROR:", error);
+ } catch (error) {
+  console.error("PRODUCT CREATE ERROR:", error);
 
-    return new Response(JSON.stringify({ message: error.message }), {
-      status: 500,
-    });
+  if (error.name === "ValidationError") {
+    const validationErrors = Object.fromEntries(
+      Object.entries(error.errors).map(([key, value]) => [
+        key,
+        value.message,
+      ])
+    );
+
+    console.error("PRODUCT VALIDATION DETAILS:", validationErrors);
+
+    return Response.json(
+      {
+        message: "اطلاعات محصول معتبر نیست",
+        errors: validationErrors,
+      },
+      { status: 400 }
+    );
   }
+
+  return Response.json(
+    { message: error.message || "خطا در ساخت محصول" },
+    { status: 500 }
+  );
+}
 }

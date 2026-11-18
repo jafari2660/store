@@ -1,4 +1,3 @@
-
 "use client";
 
 import Sidebar from "@/components/ui/Sidebar";
@@ -93,9 +92,7 @@ const Products = () => {
   const getFilePeople = (files, field) => {
     return [
       ...new Set(
-        (files || [])
-          .map((file) => file[field]?.trim())
-          .filter(Boolean),
+        (files || []).map((file) => file[field]?.trim()).filter(Boolean),
       ),
     ];
   };
@@ -109,7 +106,8 @@ const Products = () => {
       product.description,
       product.file,
       product.category?.name,
-      product.fileType,
+      product.fileTypes,
+
       ...(Array.isArray(product.tags)
         ? product.tags.map((tag) =>
             typeof tag === "object" && tag !== null ? tag.name : tag,
@@ -121,6 +119,7 @@ const Products = () => {
         file.originalName,
         file.extension,
         file.author,
+        file.translator,
         file.speaker,
       ]),
     ];
@@ -180,7 +179,7 @@ const Products = () => {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="جست‌وجوی نام، نویسنده یا گوینده..."
+                    placeholder="جست‌وجوی نام، نویسنده، مترجم یا گوینده..."
                     aria-label="جست‌وجوی محصولات"
                     className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 text-right text-[var(--color-text)] outline-none transition focus:border-blue-500 sm:max-w-md"
                   />
@@ -198,6 +197,7 @@ const Products = () => {
                           <th className="table-header-cell">شناسه</th>
                           <th className="table-header-cell">نام</th>
                           <th className="table-header-cell">نویسنده</th>
+                          <th className="table-header-cell">مترجم</th>
                           <th className="table-header-cell">گوینده</th>
                           <th className="table-header-cell">توضیحات</th>
                           <th className="table-header-cell">فایل های محصول</th>
@@ -217,7 +217,12 @@ const Products = () => {
                       <tbody className="divide-y divide-[var(--color-border)]">
                         {currentProducts.map((product, index) => {
                           const files = productFiles[product._id] || [];
+
                           const authors = getFilePeople(files, "author");
+                          const translators = getFilePeople(
+                            files,
+                            "translator",
+                          );
                           const speakers = getFilePeople(files, "speaker");
 
                           return (
@@ -234,8 +239,8 @@ const Products = () => {
                               <td
                                 className={`table-cell cursor-pointer hover:bg-[var(--color-hover)] ${
                                   expandedCells[`${product._id}-name`]
-                                    ? "whitespace-normal overflow-visible [overflow-wrap:anywhere]"
-                                    : "truncate whitespace-nowrap overflow-hidden"
+                                    ? "description-expanded"
+                                    : ""
                                 }`}
                                 onClick={() =>
                                   setExpandedCells((prev) => ({
@@ -248,11 +253,12 @@ const Products = () => {
                                 {product.name}
                               </td>
 
+                              {/* نویسنده */}
                               <td
                                 className={`table-cell cursor-pointer hover:bg-[var(--color-hover)] ${
                                   expandedCells[`${product._id}-author`]
-                                    ? "whitespace-normal overflow-visible [overflow-wrap:anywhere]"
-                                    : "truncate whitespace-nowrap overflow-hidden"
+                                    ? "description-expanded"
+                                    : ""
                                 }`}
                                 onClick={() =>
                                   setExpandedCells((prev) => ({
@@ -274,11 +280,39 @@ const Products = () => {
                                 )}
                               </td>
 
+                              {/* مترجم */}
+                              <td
+                                className={`table-cell cursor-pointer hover:bg-[var(--color-hover)] ${
+                                  expandedCells[`${product._id}-translator`]
+                                    ? "description-expanded"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  setExpandedCells((prev) => ({
+                                    ...prev,
+                                    [`${product._id}-translator`]:
+                                      !prev[`${product._id}-translator`],
+                                  }))
+                                }
+                                title="برای نمایش کامل نام مترجم کلیک کنید"
+                              >
+                                {translators.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {translators.map((translator) => (
+                                      <span key={translator}>{translator}</span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  "بدون مترجم"
+                                )}
+                              </td>
+
+                              {/* گوینده */}
                               <td
                                 className={`table-cell cursor-pointer hover:bg-[var(--color-hover)] ${
                                   expandedCells[`${product._id}-speaker`]
-                                    ? "whitespace-normal overflow-visible [overflow-wrap:anywhere]"
-                                    : "truncate whitespace-nowrap overflow-hidden"
+                                    ? "description-expanded"
+                                    : ""
                                 }`}
                                 onClick={() =>
                                   setExpandedCells((prev) => ({
@@ -408,9 +442,22 @@ const Products = () => {
                               </td>
 
                               <td className="table-cell w-12">
-                                {product.fileType === "AUDIO"
-                                  ? "کتاب صوتی"
-                                  : product.fileType?.toUpperCase() || "نامشخص"}
+                                {Array.isArray(product.fileTypes) &&
+                                product.fileTypes.length > 0
+                                  ? product.fileTypes
+                                      .map((type) => {
+                                        const labels = {
+                                          PDF: "PDF",
+                                          DOCX: "Word",
+                                          AUDIO: "کتاب صوتی",
+                                          ZIP: "ZIP",
+                                          RAR: "RAR",
+                                        };
+
+                                        return labels[type] || type;
+                                      })
+                                      .join("، ")
+                                  : "نامشخص"}
                               </td>
 
                               <td className="table-cell hover:bg-[var(--color-hover)]">

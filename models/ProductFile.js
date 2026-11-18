@@ -33,9 +33,9 @@ const ProductFileSchema = new mongoose.Schema(
       type: String,
       required: true,
       lowercase: true,
-      enum: ["pdf", "docx", "zip", "rar", "mp3", "wav", "m4a"],
+      enum: ["pdf","docx", "zip", "rar", "mp3", "wav", "m4a"],
     },
-
+    
     mimeType: {
       type: String,
       default: "application/octet-stream",
@@ -69,6 +69,13 @@ const ProductFileSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+
+    translator: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 100,
     },
   },
   { timestamps: true },

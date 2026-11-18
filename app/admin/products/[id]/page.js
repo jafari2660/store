@@ -19,7 +19,7 @@ const UpdateProduct = () => {
   const [tags, setTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [tagsLoading, setTagsLoading] = useState(true);
-  const [fileType, setFileType] = useState("");
+  const [fileTypes, setFileTypes] = useState([]);
   const [isActive, setIsActive] = useState(true);
   const [saleStatus, setSaleStatus] = useState(true);
   const [discountPrice, setDiscountPrice] = useState("");
@@ -56,7 +56,10 @@ const UpdateProduct = () => {
             : "",
         );
 
-        setFileType((productData.fileType ?? "").toLowerCase());
+        setFileTypes(
+          Array.isArray(productData.fileTypes) ? productData.fileTypes : [],
+        );
+
         setIsActive(productData.isActive ?? true);
         setSaleStatus(productData.saleStatus ?? true);
 
@@ -142,8 +145,8 @@ const UpdateProduct = () => {
       return false;
     }
 
-    if (!fileType.trim()) {
-      setFormError("نوع فایل الزامی می‌باشد");
+    if (fileTypes.length === 0) {
+      setFormError("حداقل یک نوع فایل انتخاب کنید");
       return false;
     }
 
@@ -195,7 +198,7 @@ const UpdateProduct = () => {
       return;
     }
 
-    if (!category || !fileType.trim()) {
+    if (!category || fileTypes.length === 0) {
       setFormError("دسته‌بندی و نوع فایل الزامی هستند");
       return;
     }
@@ -245,7 +248,7 @@ const UpdateProduct = () => {
             .filter(Boolean),
         ),
       );
-      formData.append("fileType", fileType.trim().toLowerCase());
+      formData.append("fileTypes", JSON.stringify(fileTypes));
       formData.append("isActive", String(isActive));
       formData.append("saleStatus", String(saleStatus));
 
@@ -411,6 +414,44 @@ const UpdateProduct = () => {
                       onChange={(e) => setTags(e.target.value)}
                       className="input-field"
                     />
+                  </div>
+
+                  {/* نوع فایل‌های مجاز محصول */}
+                  <div className="mb-4">
+                    <label className="mb-3 block text-sm font-medium text-[var(--color-text)]">
+                      نوع فایل‌های مجاز محصول
+                    </label>
+
+                    {[
+                      { value: "PDF", label: "کتاب PDF" },
+                      { value: "DOCX", label: "کتاب Word (DOCX)" },
+                      { value: "AUDIO", label: "کتاب صوتی" },
+                      { value: "ZIP", label: "فایل ZIP" },
+                      { value: "RAR", label: "فایل RAR" },
+                    ].map((type) => (
+                      <label
+                        key={type.value}
+                        className="mb-2 flex cursor-pointer items-center gap-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={fileTypes.includes(type.value)}
+                          onChange={(e) => {
+                            setFileTypes((previous) =>
+                              e.target.checked
+                                ? [...previous, type.value]
+                                : previous.filter(
+                                    (item) => item !== type.value,
+                                  ),
+                            );
+                          }}
+                        />
+
+                        <span className="text-sm text-[var(--color-text)]">
+                          {type.label}
+                        </span>
+                      </label>
+                    ))}
                   </div>
 
                   <div className="mb-3">

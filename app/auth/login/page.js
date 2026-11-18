@@ -11,10 +11,8 @@ const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
-
   const [loginMode, setLoginMode] = useState("password");
   const [otpSent, setOtpSent] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

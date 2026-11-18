@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const ProductSchema = new mongoose.Schema(
@@ -36,11 +35,23 @@ const ProductSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    fileType: {
-      type: String,
-      enum: ["PDF", "DOCX", "AUDIO", "ZIP", "RAR"],
+
+    fileTypes: {
+      type: [
+        {
+          type: String,
+          enum: ["PDF", "DOCX", "AUDIO", "ZIP", "RAR"],
+        },
+      ],
       required: true,
+      validate: {
+        validator: function (value) {
+          return Array.isArray(value) && value.length > 0;
+        },
+        message: "حداقل یک نوع فایل باید انتخاب شود.",
+      },
     },
+    
     isActive: {
       type: Boolean,
       default: true,
@@ -64,22 +75,26 @@ const ProductSchema = new mongoose.Schema(
       type: Number,
       default: null,
       min: 0,
-      validate: [
-        {
-          validator: function (value) {
-            return value == null || value < this.price;
-          },
-          message: "قیمت تخفیفی باید کمتر از قیمت اصلی باشد",
+      validate: {
+        validator: function (value) {
+          if (value == null) return true;
+
+          const originalPrice = this.price ?? this.getUpdate?.()?.$set?.price;
+
+          if (originalPrice == null) return true;
+
+          return Number(value) < Number(originalPrice);
         },
-      ],
+        message: "قیمت تخفیفی باید کمتر از قیمت اصلی باشد",
+      },
     },
 
-    views : {
+    views: {
       type: Number,
-      default : 0 ,
+      default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Product ||

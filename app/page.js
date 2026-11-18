@@ -4,7 +4,7 @@ import SlideShow from "@/components/home/SlideShow";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import AdsSection from "@/components/home/AdsSection";
 import DiscountedBooks from "@/components/home/DiscountedBooks";
-
+import LatestBooks from "@/components/home/LatestBooks";
 
 const Home = () => {
   return (
@@ -24,6 +24,10 @@ const Home = () => {
 
       <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
        <DiscountedBooks />
+      </section>
+
+      <section className="mx-auto my-6 w-full max-w-[1320px] px-3">
+       <LatestBooks />
       </section>
     </main>
   );

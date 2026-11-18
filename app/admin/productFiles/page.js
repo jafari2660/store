@@ -46,7 +46,7 @@ const ProductFiles = () => {
             }
 
             const files = await filesResponse.json();
-
+          
             if (!Array.isArray(files)) {
               throw new Error(
                 `اطلاعات فایل‌های محصول ${product.name} معتبر نیست.`,
@@ -71,6 +71,7 @@ const ProductFiles = () => {
     fetchProducts();
   }, []);
 
+  // دریافت نویسندگان
   const getAuthors = (product) => {
     const authors = [
       ...new Set(
@@ -83,6 +84,20 @@ const ProductFiles = () => {
     return authors.length ? authors.join("، ") : "نامشخص";
   };
 
+  // دریافت مترجمان
+  const getTranslators = (product) => {
+    const translators = [
+      ...new Set(
+        (product.productFiles || [])
+          .map((file) => file.translator?.trim())
+          .filter(Boolean),
+      ),
+    ];
+
+    return translators.length ? translators.join("، ") : "بدون مترجم";
+  };
+
+  // دریافت گویندگان
   const getSpeakers = (product) => {
     const speakers = [
       ...new Set(
@@ -92,20 +107,23 @@ const ProductFiles = () => {
       ),
     ];
 
-    return speakers.length ? speakers.join("، ") : "نامشخص";
+    return speakers.length ? speakers.join("، ") : "بدون گوینده";
   };
 
+  // جست‌وجوی محصولات
   const filteredProducts = products.filter((product) => {
     const search = searchTerm.trim().toLowerCase();
 
     if (!search) return true;
 
     const authors = getAuthors(product);
+    const translators = getTranslators(product);
     const speakers = getSpeakers(product);
 
     return (
       product.name?.toLowerCase().includes(search) ||
       authors.toLowerCase().includes(search) ||
+      translators.toLowerCase().includes(search) ||
       speakers.toLowerCase().includes(search)
     );
   });
@@ -150,8 +168,8 @@ const ProductFiles = () => {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="جست‌وجوی نام محصول، نویسنده یا گوینده..."
-                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 text-right text-[var(--color-text)] outline-none transition focus:border-blue-500 sm:max-w-md"
+                    placeholder="جست‌وجوی نام محصول، نویسنده، مترجم یا گوینده..."
+                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 text-right text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] sm:max-w-md"
                   />
                 </div>
 
@@ -161,12 +179,13 @@ const ProductFiles = () => {
                   {loading ? (
                     <LoadingSpinner />
                   ) : (
-                    <table className="w-full min-w-[750px] border-collapse text-right lg:min-w-0 lg:table-fixed">
+                    <table className="w-full min-w-[900px] border-collapse text-right lg:min-w-0 lg:table-fixed">
                       <thead>
                         <tr className="bg-[var(--color-background)] text-sm text-[var(--color-muted)]">
                           <th className="table-header-cell">ردیف</th>
                           <th className="table-header-cell">نام محصول</th>
                           <th className="table-header-cell">نویسنده</th>
+                          <th className="table-header-cell">مترجم</th>
                           <th className="table-header-cell">گوینده</th>
                           <th className="table-header-cell">عملیات</th>
                         </tr>
@@ -191,6 +210,10 @@ const ProductFiles = () => {
                             </td>
 
                             <td className="table-cell">
+                              {getTranslators(product)}
+                            </td>
+
+                            <td className="table-cell">
                               {getSpeakers(product)}
                             </td>
 
@@ -210,7 +233,7 @@ const ProductFiles = () => {
 
                         {currentProducts.length === 0 && (
                           <tr>
-                            <td colSpan="5" className="table-cell text-center">
+                            <td colSpan="6" className="table-cell text-center">
                               محصولی پیدا نشد.
                             </td>
                           </tr>
