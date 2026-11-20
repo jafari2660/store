@@ -50,7 +50,7 @@ const FeaturedProducts = () => {
     };
   }, []);
 
-  // راه‌اندازی اسلایدر
+ 
   useEffect(() => {
     if (loading || products.length === 0) return;
 

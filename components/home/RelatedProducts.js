@@ -19,7 +19,7 @@ const RelatedProducts = ({ categoryId }) => {
 
   const sliderRef = useRef(null);
 
-  // دریافت محصولات مرتبط
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -101,13 +101,13 @@ const RelatedProducts = ({ categoryId }) => {
   if (relatedProducts.length === 0) return null;
 
   return (
-    <section className="mb-4">
-      <section className="container-xxl">
-        <section className="row">
-          <section className="col">
+   <section className="mx-auto mb-4 w-full max-w-screen-2xl px-3 sm:px-4">
+  <section className="w-full">
+    <section className="w-full">
+      <section className="w-full">
 
-            <section className="content-wrapper bg-[var(--color-surface)] p-3 rounded-2 border border-[var(--color-border)]">
-
+        <section className="content-wrapper rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          
               {/* عنوان بخش */}
               <section className="content-header">
 

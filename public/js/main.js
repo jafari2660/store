@@ -4,11 +4,11 @@ $(document).ready(function() {
 
 
     $("#search").focusin(function() {
-        $(".search-result").removeClass("visually-hidden");
+        $(".search-result").removeClass("hidden");
         $(".search-box").addClass("search-box-active");
     }).add(".search-result").focusout(function() {
         if ( !$(".search-result").is(':focus') ) {
-            $(".search-result").addClass("visually-hidden");
+            $(".search-result").addClass("hidden");
             $(".search-box").removeClass("search-box-active");
         }
     });
@@ -167,10 +167,10 @@ $(document).ready(function() {
         var delivery_type = $('input[name="delivery_type"]').is(":checked");
 
         if(address == true && delivery_type == true) {
-            $("#address-button").removeClass("d-block");
-            $("#address-button").addClass("d-none");
-            $("#next-level").removeClass("d-none");
-            $("#next-level").addClass("d-block");
+            $("#address-button").removeClass("block");
+            $("#address-button").addClass("hidden");
+            $("#next-level").removeClass("hidden");
+            $("#next-level").addClass("block");
         }
     });
 
@@ -180,10 +180,10 @@ $(document).ready(function() {
         var delivery_type = $('input[name="delivery_type"]').is(":checked");
 
         if(address == true && delivery_type == true) {
-            $("#address-button").removeClass("d-block");
-            $("#address-button").addClass("d-none");
-            $("#next-level").removeClass("d-none");
-            $("#next-level").addClass("d-block");
+            $("#address-button").removeClass("block");
+            $("#address-button").addClass("hidden");
+            $("#next-level").removeClass("hidden");
+            $("#next-level").addClass("block");
         }
     });
 
@@ -200,10 +200,10 @@ $(document).ready(function() {
         var payment_type = $('input[name="payment_type"]').is(":checked");
 
         if(payment_type == true) {
-            $("#payment-button").removeClass("d-block");
-            $("#payment-button").addClass("d-none");
-            $("#final-level").removeClass("d-none");
-            $("#final-level").addClass("d-block");
+            $("#payment-button").removeClass("block");
+            $("#payment-button").addClass("hidden");
+            $("#final-level").removeClass("hidden");
+            $("#final-level").addClass("block");
         }
     });
 

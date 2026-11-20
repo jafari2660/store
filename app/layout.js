@@ -1,5 +1,3 @@
-
-import "bootstrap/dist/css/bootstrap.rtl.min.css";
 import "./styles/style.css";
 import "./styles/global.css";
 
@@ -20,13 +18,16 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
           href="/plugins/owlcarousel/assets/owl.carousel.min.css"
         />
+
         <link
           rel="stylesheet"
           href="/plugins/owlcarousel/assets/owl.theme.default.min.css"
         />
 
-        <Script src="/js/jquery-3.5.1.min.js" strategy="beforeInteractive" />
-        <Script src="/js/popper.js" strategy="beforeInteractive" />
+        <Script
+          src="/js/jquery-3.5.1.min.js"
+          strategy="beforeInteractive"
+        />
       </head>
 
       <body>
@@ -38,7 +39,11 @@ export default function RootLayout({ children }) {
           src="/plugins/owlcarousel/owl.carousel.min.js"
           strategy="afterInteractive"
         />
-        <Script src="/js/main.js" strategy="lazyOnload" />
+
+        <Script
+          src="/js/main.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

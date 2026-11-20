@@ -8,8 +8,8 @@ const ProductGallery = ({ images }) => {
     Array.isArray(images) && images.length > 0 ? images[0] : images;
 
   return (
-    <section className="content-wrapper bg-[var(--color-surface)] p-3 rounded-2 mb-4 border border-[var(--color-border)]">
-      <section className="product-gallery">
+<section className="content-wrapper bg-[var(--color-surface)] p-3 rounded-lg mb-4 border border-[var(--color-border)]"> 
+       <section className="product-gallery">
         {/* تصویر اصلی */}
         <section className="relative w-full aspect-square mb-3 overflow-hidden rounded-lg bg-[var(--color-surface)]">
           {mainImage ? (

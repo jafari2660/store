@@ -6,7 +6,7 @@ export async function GET() {
   await connectToDatabase();
 
   try {
-    const categories = await Category.find({}).limit(4).select("name");
+    const categories = await Category.find({}).select("name");
 
     return NextResponse.json(categories, { status: 200 });
   } catch (error) {

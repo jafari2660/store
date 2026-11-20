@@ -47,7 +47,8 @@ export default function Header() {
   return (
     <header dir="rtl" className="w-full px-4 md:px-8 py-5">
       <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
-        {/* منوی دسکتاپ */}
+   
+
         <nav className="hidden lg:flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-5 py-3 shadow-[0_4px_25px_rgba(0,0,0,0.05)]">
           {navLinks.map((link) => (
             <Link
@@ -59,7 +60,7 @@ export default function Header() {
             </Link>
           ))}
 
-          {/* منوی بازشونده دسته‌بندی‌ها */}
+         
           <div className="relative">
             <button
               type="button"
@@ -83,7 +84,7 @@ export default function Header() {
                   categories.map((category) => (
                     <Link
                       key={category._id}
-                      href="#"
+                      href={`/categories/${category._id}`}
                       onClick={() => setCategoryMenuOpen(false)}
                       className="block no-underline rounded-xl px-4 py-3 text-sm text-[var(--color-text)] hover:bg-[var(--color-hover)] hover:text-[var(--color-primary)]"
                     >
@@ -197,7 +198,7 @@ export default function Header() {
                   categories.map((category) => (
                     <Link
                       key={category._id}
-                      href="#"
+                      href={`/categories/${category._id}`}
                       onClick={() => {
                         setCategoryMenuOpen(false);
                         setMenuOpen(false);

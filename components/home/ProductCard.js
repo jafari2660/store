@@ -29,7 +29,7 @@ const ProductCard = ({ product }) => {
       </div>
 
       <Link
-        href={`products/${product._id}`}
+        href={`/products/${product._id}`}
         className="flex flex-1 flex-col no-underline"
       >
         <div className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-lg p-3 sm:h-[210px]">
@@ -44,6 +44,25 @@ const ProductCard = ({ product }) => {
             className="h-full w-full object-contain transition-transform duration-300 "
           />
         </div>
+
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {product.stock > 0 ? (
+            <span className="rounded-md bg-green-50 px-2 py-1 text-xs text-green-700">
+              موجود
+            </span>
+          ) : (
+            <span className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-700">
+              ناموجود
+            </span>
+          )}
+          {product.fileTypes?.length > 0 && (
+            <span className="text-xs text-[var(--color-muted)]">
+              {product.fileTypes.join("، ")}
+            </span>
+          )}
+        </div>
+
 
         <h3 className="mt-3 min-h-12 line-clamp-2 text-sm font-medium leading-6 text-[var(--color-text)] transition-colors group-hover:text-[var(--color-primary)]">
           {product.name}

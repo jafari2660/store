@@ -97,5 +97,10 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+ProductSchema.index({ category: 1, isActive: 1, saleStatus: 1, createdAt: -1 }); 
+ProductSchema.index({ category: 1, isActive: 1, saleStatus: 1, views: -1 }); 
+ProductSchema.index({ category: 1, isActive: 1, saleStatus: 1, stock: 1 }); 
+
+
 export default mongoose.models.Product ||
   mongoose.model("Product", ProductSchema);

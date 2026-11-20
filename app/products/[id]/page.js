@@ -5,7 +5,7 @@ import RelatedProducts from "@/components/home/RelatedProducts";
 
 async function getProductData(id) {
   const res = await fetch(
-    `${process.env.NEXTAUTH_URL || "http://localhost:3000" }/api/products/home/${id}`,
+    `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/products/home/${id}`,
     {
       next: { revalidate: 60 },
       cache: "force-cache",
@@ -49,14 +49,16 @@ const SingleProduct = async ({ params }) => {
               <div className="flex justify-between items-center gap-3 mb-4">
                 <p className="text-[var(--color-muted)]">قیمت کالا</p>
                 <p className="text-[var(--color-muted)]">
-                   {Number(product.price ?? 0).toLocaleString("fa-IR")} <span className="text-xs">تومان</span>
+                  {Number(product.price ?? 0).toLocaleString("fa-IR")}{" "}
+                  <span className="text-xs">تومان</span>
                 </p>
               </div>
 
               <div className="flex justify-between items-center gap-3 mb-4">
                 <p className="text-[var(--color-muted)]">تخفیف کالا</p>
                 <p className="text-[var(--color-primary)] font-bold">
-                   {Number(product.discountPrice ?? 0).toLocaleString("fa-IR")}<span className="text-xs">تومان</span>
+                  {Number(product.discountPrice ?? 0).toLocaleString("fa-IR")}
+                  <span className="text-xs">تومان</span>
                 </p>
               </div>
 
@@ -65,7 +67,8 @@ const SingleProduct = async ({ params }) => {
               <div className="flex justify-between items-center mb-5">
                 <p className="font-bold">مبلغ نهایی</p>
                 <p className="font-bold text-lg">
-                  {Number(product.price ?? 0).toLocaleString("fa-IR")} <span className="text-xs">تومان</span>
+                  {Number( product.discountPrice || product.price || 0,).toLocaleString("fa-IR")}
+                  <span className="text-xs"> تومان</span>
                 </p>
               </div>
 
@@ -80,7 +83,7 @@ const SingleProduct = async ({ params }) => {
         </div>
 
         <div className="mt-8">
-          <RelatedProducts categoryId={product.category._id}/>
+          <RelatedProducts categoryId={product.category._id} />
         </div>
       </div>
     </main>
